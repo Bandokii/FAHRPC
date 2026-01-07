@@ -1,0 +1,50 @@
+{
+  "discord": {
+    "client_id": "1457701520673079501",
+    "buttons": [
+      {
+        "label": "Start Folding",
+        "url": "https://foldingathome.org/start-folding/"
+      },
+      {
+        "label": "FAQ",
+        "url": "https://foldingathome.org/diseases/"
+      }
+    ]
+  },
+  "foldingathome": {
+    "web_url": "http://localhost:7396/",
+    "stats_url": "https://v8-5.foldingathome.org/stats",
+    "update_interval": 15
+  },
+  "temperature": {
+    "thresholds": {
+      "low": 65,
+      "medium": 75
+    },
+    "colors": {
+      "low": "green",
+      "medium": "orange",
+      "high": "red"
+    }
+  },
+  "display": {
+    "start_hidden": true,
+    "show_header": true,
+    "icon_file": "FAHRPC.png"
+  },
+  "hardware": {
+    "nvidia": {
+      "enabled": true,
+      "strip_prefix": "NVIDIA GeForce "
+    },
+    "amd": {
+      "enabled": false,
+      "strip_prefix": "AMD Radeon "
+    }
+  },
+  "logging": {
+    "error_log_file": "fah_error_log.txt",
+    "suppress_asyncio_warnings": true
+  }
+}
