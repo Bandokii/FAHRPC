@@ -14,7 +14,7 @@ DEFAULT_CONFIG = {
         "client_id": "1457701520673079501",
         "buttons": [
             {"label": "Start Folding", "url": "https://foldingathome.org/start-folding/"},
-            {"label": "FAQ", "url": "https://foldingathome.org/diseases/"}
+            {"label": "Github", "url": "https://github.com/Bandokii/FAHRPC"}
         ]
     },
     "foldingathome": {
