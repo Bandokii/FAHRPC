@@ -2,7 +2,7 @@
 FAHRPC - Folding@Home Discord Rich Presence
 -------------------------------------------
 Original Author: Bandokii
-AI Collaborator: Gemini (Google AI)
+AI Collaborator: Claude Haiku 4.5
 Refactored for Efficiency & Multi-GPU Support
 
 Main entry point for modular FAHRPC with improved error handling,
@@ -120,7 +120,7 @@ def print_header(config: dict) -> None:
         rf"     {RED}\_|   \_| |_/\_| |_/{BLUE} \_| \_|\_|     \____/         ",
     ]
     
-    signature = f"               {GRAY}By Bandokii & Gemini{RESET}"
+    signature = f"               {GRAY}By Bandokii & Claude{RESET}"
     hz = "═"
     divider = f"           {BLUE}{hz * 14}{WHITE}{hz}{RED}{hz * 14}{RESET}"
     
@@ -187,6 +187,8 @@ async def main_logic() -> None:
         for dev in gpu_monitor.amd_devices:
             clean_name = dev.adapterName.replace(config['hardware']['amd']['strip_prefix'], "").strip()
             print(f"{hardware_padding}└─ {clean_name}")
+
+    # Intel GPU log output
     
     # Initialize scraper
     print(f" {get_timestamp()} {COLORS['white']}[*] Launching Web Scraper engine...{COLORS['reset']}")
@@ -210,6 +212,7 @@ async def main_logic() -> None:
     last_stats_sync_time = 0
     force_stats_sync = False
     sync_status = 'idle'
+    fifty_percent_synced = False
     discord_lost_logged = False
     fah_lost_logged = False
     last_discord_status = False
@@ -230,7 +233,7 @@ async def main_logic() -> None:
                 else:
                     if not discord_lost_logged:
                         print(f" {get_timestamp()} {COLORS['red']}[!] Discord not found.{COLORS['reset']}")
-                        print(f"{hardware_padding}└─ Retrying every {update_interval} seconds...{COLORS['reset']}")
+                        print(f"{hardware_padding}└─ Retrying...{COLORS['reset']}")
                         discord_lost_logged = True
                         last_discord_status = False
                     await asyncio.sleep(update_interval)
@@ -239,7 +242,7 @@ async def main_logic() -> None:
             try:
                 # Get FAH control data with error handling
                 try:
-                    percent, proj_id, is_running = await scraper.get_control_data()
+                    percents, proj_ids, is_running = await scraper.get_control_data()
                     last_fah_status = True
                 except Exception as e:
                     if not fah_lost_logged:
@@ -267,9 +270,20 @@ async def main_logic() -> None:
                 if is_running:
                     # Check if we need to sync stats
                     current_time = time.time()
+                    # Use first project for sync logic (legacy behavior)
+                    percent_float = 0.0
+                    proj_id = proj_ids[0] if proj_ids else "Active"
+                    percent = percents[0] if percents else "0"
+                    try:
+                        percent_float = float(percent)
+                    except Exception:
+                        pass
+                    # Reset 50% sync flag on new project
+                    if proj_id != last_known_project:
+                        fifty_percent_synced = False
                     needs_pull = (
                         proj_id != last_known_project or
-                        (current_time - last_stats_sync_time > 1800) or
+                        (percent_float >= 50.0 and not fifty_percent_synced) or
                         sync_status == 'idle' or
                         force_stats_sync
                     )
@@ -279,12 +293,14 @@ async def main_logic() -> None:
                         force_stats_sync = False
                         last_known_project = proj_id
                         print(f" {get_timestamp()} {COLORS['white']}[+] StatSync...{COLORS['reset']}")
-                        
                         new_pts, new_wus = await scraper.get_global_stats()
                         if new_pts:
                             global_points, global_wus = new_pts, new_wus
                             last_stats_sync_time = current_time
                             sync_status = 'synced'
+                            # Mark 50% sync as done if triggered by 50%
+                            if percent_float >= 50.0:
+                                fifty_percent_synced = True
                             print(f" {get_timestamp()} {COLORS['green']}[OK] StatSync: {COLORS['white']}{global_points} pts │ {global_wus} WUs{COLORS['reset']}")
                         else:
                             sync_status = 'idle'
@@ -302,7 +318,12 @@ async def main_logic() -> None:
                     for name, util, temp in gpu_data:
                         t_color = get_temp_color(temp, config)
                         temp_display = f"{temp}°c" if temp != "N/A" else "N/A"
-                        gpu_lines_console.append(f"{name} │ {util}% - {t_color}{temp_display}{COLORS['reset']}")
+                        # Color GPU name by vendor
+                        if name in gpu_monitor.nvidia_names:
+                            name_colored = f"{COLORS['green']}{name}{COLORS['reset']}"
+                        else:
+                            name_colored = f"{COLORS['red']}{name}{COLORS['reset']}"
+                        gpu_lines_console.append(f"{name_colored} │ {util}% - {t_color}{temp_display}{COLORS['reset']}")
                     
                     # Format for RPC
                     if not gpu_lines_console:
@@ -331,20 +352,49 @@ async def main_logic() -> None:
                         for line in gpu_lines_console[1:]:
                             console_output += f"\n{padding_str}{line}"
                     
-                    # Alternate between project and GPU info
+                    # Console logging cycles (unchanged)
                     if cycle_index % 2 == 0:
-                        detail_text = f"Project: {proj_id} ({percent}%)"
-                        state_text = f"pTotal: {global_points}"
-                        console_line_final = f"Project: {proj_id} - {COLORS['yellow']}{percent}%{COLORS['reset']}"
+                        indent = ' ' * 21
+                        detail_texts = []
+                        for idx, (pid, pct) in enumerate(zip(proj_ids, percents)):
+                            detail_texts.append(f"{indent if idx > 0 else ''}{COLORS['white']}Project{COLORS['reset']} │ {pid} - {COLORS['yellow']}{pct}%{COLORS['reset']}")
+                        console_line_final = "\n".join(detail_texts)
                     else:
-                        detail_text = rpc_gpu_text
-                        state_text = f"WUs Completed: {global_wus}"
                         console_line_final = console_output
+
+                    # Discord Rich Presence cycle logic (separate from console)
+                    num_projects = len(proj_ids)
+                    discord_cycle = 0
+                    if num_projects >= 2:
+                        discord_cycle = cycle_index % 3
+                        if discord_cycle == 0:
+                            detail_text = f"pTotal: {global_points}"
+                            state_text = f"WUs Completed: {global_wus}"
+                        elif discord_cycle == 1:
+                            detail_text = f"Project {proj_ids[0]} - {percents[0]}%"
+                            state_text = f"Project {proj_ids[1]} - {percents[1]}%"
+                        else:
+                            detail_text = rpc_gpu_text
+                            state_text = '"hyper modern space heater"'
+                    elif num_projects == 1:
+                        discord_cycle = cycle_index % 2
+                        if discord_cycle == 0:
+                            detail_text = f"pTotal: {global_points}"
+                            state_text = f"WUs Completed: {global_wus}"
+                        else:
+                            detail_text = rpc_gpu_text
+                            state_text = f"Project {proj_ids[0]} - {percents[0]}%"
+                    else:
+                        detail_text = f"pTotal: {global_points}"
+                        state_text = f"WUs Completed: {global_wus}"
                     
                     # Update Discord RPC with error handling
                     try:
                         if await discord.update(detail_text, state_text):
-                            print(f" {get_timestamp()} {COLORS['red']}FAH{COLORS['blue']}RPC{COLORS['reset']} - {console_line_final}")
+                            # Project line: [timestamp] FAHRPC - Project │ <project_id> - <percent>%
+                            # GPU line: [timestamp] FAHRPC - <gpu info>
+                            fah_rpc_colored = f"{COLORS['red']}FAH{COLORS['blue']}RPC{COLORS['reset']}"
+                            print(f" {get_timestamp()} {fah_rpc_colored} - {console_line_final}")
                             cycle_index += 1
                         else:
                             if not discord_lost_logged:

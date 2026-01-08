@@ -60,12 +60,17 @@ FAHRPC can run hidden in the system tray:
 TRAY ICON MENU
 ═══════════════════════════════════════════════════════
 
-When running, FAHRPC provides a system tray icon with options:
+When running, FAHRPC provides a system tray icon with options to manage the
+application without closing the main window.
 
-  Show Console    - Display the console window
-  Hide Console    - Hide console (app continues running)
+Available Options:
+  Show Console    - Display the console window for monitoring
+  Hide Console    - Hide console to system tray (app continues running silently)
   Restart FAHRPC  - Gracefully restart the application
   Exit            - Cleanly shut down FAHRPC
+
+The icon appears in your Windows system tray with the app name and allows easy
+control without opening the console window.
 
 
 MAKE FAHRPC RUN ON STARTUP
@@ -107,13 +112,25 @@ CONFIGURATION
 ═══════════════════════════════════════════════════════
 
 Edit config.json to customize:
-  • Discord client ID
+  • Discord client ID (default: pre-configured)
+  • Folding@Home web interface URL (default: http://localhost:7396/)
+  • FAH stats server URL (default: v8-5 stats server)
   • Update interval (default: 15 seconds)
   • Temperature thresholds and display colors
-  • Which GPUs to monitor (NVIDIA/AMD)
-  • Log file location
+  • Which GPUs to monitor (NVIDIA/AMD) - both enabled by default
+  • Display options (start hidden, show header, tray icon file)
+  • Log file location (default: fah_error_log.txt)
 
 Default configuration works out of the box - no changes needed to get started!
+
+GPU SUPPORT
+──────────
+FAHRPC supports dual GPU monitoring:
+  • NVIDIA: Full support via nvidia-ml-py (pynvml)
+  • AMD: Full support via pyadl
+
+Set enabled: false for either GPU type in config.json to skip detection and 
+improve startup time if you don't have that hardware.
 
 
 TROUBLESHOOTING
@@ -128,19 +145,43 @@ Discord Not Connecting
 Folding@Home Not Detected
   • Ensure F@H is running
   • Verify web interface is enabled in F@H settings
-  • Confirm it's running on localhost:7396
+  • Confirm it's running on localhost:7396 (or update config.json)
   • Restart both F@H and FAHRPC
 
 GPU Stats Not Showing
-  • Ensure GPU drivers are installed
-  • NVIDIA: Requires NVIDIA GPU driver
-  • AMD: Requires AMD driver/library
+  • Ensure GPU drivers are installed and up to date
+  • NVIDIA: Requires NVIDIA GPU driver with NVML support
+  • AMD: Requires AMD driver and pyadl library
   • Check fah_error_log.txt for hardware errors
+  • Verify GPU type is enabled in config.json
 
 High CPU Usage
-  • Reduce update_interval in config.json
-  • Disable unused GPU type in config.json
-  • Check if web scraper is timing out
+  • Increase update_interval in config.json (currently 15 seconds)
+  • Disable unused GPU type in config.json (nvidia or amd)
+  • Check if web scraper is timing out - may indicate F@H interface issues
+
+Setup Issues
+
+  Python Not Found After Installation
+    • Restart the terminal/command prompt after setup completes
+    • If still not found, verify Python installed to C:\Users\[username]\AppData\Local\Programs\Python\
+    • Add Python to PATH manually if needed
+
+  Playwright Installation Fails
+    • Ensure internet connection is stable
+    • Run setup again - installation is idempotent
+    • Check setup_error_log.txt for specific errors
+    • May require 500MB+ free disk space for Chromium binary
+
+  Administrator Privileges Required
+    • DPSETUP.bat must be run as Administrator
+    • Right-click DPSETUP.bat → Run as Administrator
+    • Some policies may require UAC approval
+
+  Import Errors When Running main.py
+    • Ensure setup completed without errors
+    • Check all dependencies installed: pip list | findstr playwright pypresence nvidia-ml-py pystray Pillow pyadl
+    • Run setup again if any packages are missing
 
 
 LOG FILES
@@ -154,12 +195,28 @@ fah_error_log.txt - Contains detailed logs of:
   • Any issues encountered
 
 Check this file to diagnose problems!
-	
-    
-	  
-	 
-	 
-	  
-	  
-	  
-  
+
+DEPENDENCIES
+═══════════════════════════════════════════════════════
+
+FAHRPC requires the following Python packages (automatically installed by setup):
+
+Core Dependencies:
+  • playwright          - Web scraping and browser automation
+  • pypresence          - Discord RPC connection and updates
+  • nvidia-ml-py        - NVIDIA GPU monitoring via pynvml
+  • pyadl               - AMD GPU monitoring
+  • pystray             - System tray icon management
+  • Pillow (PIL)        - Image handling for tray icon
+
+Python Version:
+  • Python 3.7 or higher (3.10+ recommended)
+
+External Requirements:
+  • Windows 10+ operating system
+  • Discord client (running and logged in)
+  • Folding@Home client with web interface enabled (port 7396)
+  • GPU drivers (NVIDIA or AMD, as applicable)
+  • Administrator privileges for setup
+
+All dependencies are installed automatically by DPSETUP.bat

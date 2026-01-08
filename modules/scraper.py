@@ -52,7 +52,7 @@ class FAHScraper:
         self.control_page = await self.context.new_page()
         self.stats_page = await self.context.new_page()
     
-    async def get_control_data(self) -> Tuple[str, str, bool]:
+    async def get_control_data(self) -> Tuple[list, list, bool]:
         """
         Scrape the local FAH control page.
         
@@ -68,13 +68,12 @@ class FAHScraper:
                 wait_until="networkidle",
                 timeout=8000
             )
-            content = await self.control_page.content()
-            
-            percent = (RE_PERCENT.findall(content) + ["0"])[0]
-            proj_id = (RE_PROJ_ID.findall(content) + ["Active"])[0]
+            # Extract percent from .progress-text for each project
+            percent_elements = await self.control_page.locator('.progress-text').all_text_contents()
+            percents = [p.strip().replace('%','') for p in percent_elements if p.strip()] or ["0"]
+            proj_ids = RE_PROJ_ID.findall(await self.control_page.content()) or ["Active"]
             is_running = await self.control_page.locator(".state-run").count() > 0
-            
-            return percent, proj_id, is_running
+            return percents, proj_ids, is_running
         except Exception as e:
             raise Exception(f"Control page error: {e}")
     
