@@ -26,7 +26,7 @@ SETUP INSTRUCTIONS
 
 Step 1: Run Setup
 ─────────────────
-  1. Run setup.bat (double-click or from command prompt)
+  1. Run MAIN_SETUP.bat (it will pull the other setupfile automatically)
   2. This will automatically:
      • Check if uv is installed (installs if missing)
      • Create virtual environment (.venv/)
@@ -34,6 +34,7 @@ Step 1: Run Setup
      • Create RUN_FAHRPC.bat launcher for quick execution
   3. Monitor the console for any errors
   4. Check fah_error_log.txt if issues occur
+
 
 Step 2: Verify Requirements
 ─────────────────────────────
@@ -91,10 +92,24 @@ To completely remove FAHRPC and all its dependencies:
      • Remove virtual environment (.venv/)
      • Delete all generated files and logs
      • Remove autostart entries (Task Scheduler & Startup folder)
-     • Uninstall uv package manager
-  4. Your system will be restored to its pre-installation state
+     • Create UV_UNINSTALL.txt with instructions for removing uv
+  4. Your system will be partially restored to its pre-installation state
 
-After uninstall, you can safely delete the entire FAHRPC project folder.
+uv Package Manager Removal:
+  UNINSTALL.bat does not automatically remove uv (in case you use it for other
+  projects). Instead, it creates a file named UV_UNINSTALL.txt containing
+  detailed step-by-step instructions for manual uv removal. Simply follow those
+  instructions if you want to completely uninstall uv from your system.
+
+Python Cleanup:
+If you installed Python specifically for FAHRPC and no longer need it, you can
+uninstall it manually through Windows Settings → Apps. However, if Python was
+already on your system or you use it for other projects, leave it installed.
+
+After Uninstall:
+  • UV_UNINSTALL.txt contains instructions to remove uv (if desired)
+  • You can safely delete the entire FAHRPC project folder
+  • Keep Python and uv if you use them for other projects
 
 Note: If you want to keep uv for other projects, you can manually uninstall
 just FAHRPC by deleting the .venv folder and removing autostart entries.
@@ -212,19 +227,19 @@ Setup Issues
 
   Playwright Installation Fails
     • Ensure internet connection is stable
-    • Run setup again - installation is idempotent
-    • Check setup_error_log.txt for specific errors
+    • Run MAIN_SETUP.bat again - installation is idempotent
+    • Check fah_error_log.txt for specific errors
     • May require 500MB+ free disk space for Chromium binary
 
   Administrator Privileges Required
-    • setup.bat may require Administrator privileges
-    • Right-click setup.bat → Run as Administrator
+    • MAIN_SETUP.bat may require Administrator privileges
+    • Right-click MAIN_SETUP.bat → Run as Administrator
     • Some policies may require UAC approval
 
   Import Errors When Running main.py
-    • Ensure setup.bat completed without errors
+    • Ensure MAIN_SETUP.bat completed without errors
     • Check all dependencies installed: pip list | findstr playwright pypresence nvidia-ml-py pystray Pillow pyadl
-    • Run setup.bat again if any packages are missing
+    • Run MAIN_SETUP.bat again if any packages are missing
 
 
 LOG FILES
@@ -242,7 +257,7 @@ Check this file to diagnose problems!
 DEPENDENCIES
 ═══════════════════════════════════════════════════════
 
-FAHRPC requires the following Python packages (automatically installed by setup.bat):
+FAHRPC requires the following Python packages (automatically installed by MAIN_SETUP.bat):
 
 Core Dependencies:
   • playwright          - Web scraping and browser automation
@@ -267,5 +282,5 @@ External Requirements:
   • GPU drivers (NVIDIA or AMD, as applicable)
   • Administrator privileges for initial setup (if uv needs to be installed)
 
-All dependencies are installed automatically by setup.bat
-uv handles everything - just run setup.bat and you're done!
+All dependencies are installed automatically by MAIN_SETUP.bat
+uv handles everything - just run MAIN_SETUP.bat and you're done!

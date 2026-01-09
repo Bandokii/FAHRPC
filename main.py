@@ -2,7 +2,7 @@
 FAHRPC - Folding@Home Discord Rich Presence
 -------------------------------------------
 Original Author: Bandokii
-AI Collaborator: Claude Haiku 4.5
+AI Collaborator: VSCode Copilot
 Refactored for Efficiency & Multi-GPU Support
 
 Main entry point for modular FAHRPC with improved error handling,
@@ -120,7 +120,7 @@ def print_header(config: dict) -> None:
         rf"     {RED}\_|   \_| |_/\_| |_/{BLUE} \_| \_|\_|     \____/         ",
     ]
     
-    signature = f"               {GRAY}By Bandokii & Claude{RESET}"
+    signature = f"               {GRAY}By Bandokii & VSCode Copilot{RESET}"
     hz = "═"
     divider = f"           {BLUE}{hz * 14}{WHITE}{hz}{RED}{hz * 14}{RESET}"
     
@@ -188,8 +188,6 @@ async def main_logic() -> None:
             clean_name = dev.adapterName.replace(config['hardware']['amd']['strip_prefix'], "").strip()
             print(f"{hardware_padding}└─ {clean_name}")
 
-    # Intel GPU log output
-    
     # Initialize scraper
     print(f" {get_timestamp()} {COLORS['white']}[*] Launching Web Scraper engine...{COLORS['reset']}")
     scraper = FAHScraper(config)

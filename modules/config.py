@@ -126,12 +126,3 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
         print(f"Error parsing config file: {e}")
         print("Using default configuration.")
         return DEFAULT_CONFIG
-
-def get_config() -> Dict[str, Any]:
-    """
-    Get the global configuration instance.
-    
-    Returns:
-        Configuration dictionary
-    """
-    return load_config()

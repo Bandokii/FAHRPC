@@ -37,7 +37,6 @@ class GPUMonitor:
         self.nvidia_handles = []
         self.nvidia_names = []
         self.amd_devices = []
-        # self.intel_devices = []
         self._detect_hardware()
     
     def _detect_hardware(self) -> None:
@@ -141,11 +140,6 @@ class GPUMonitor:
     def amd_count(self):
         """Number of detected AMD GPUs."""
         return len(self.amd_devices)
-    # Intel GPU support reserved for future implementation
-    # @property
-    # def intel_count(self):
-    #     """Number of detected Intel GPUs."""
-    #     return len(self.intel_devices)
     
     @staticmethod
     def shutdown() -> None:
