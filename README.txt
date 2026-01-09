@@ -3,7 +3,7 @@
     ║    Discord Rich Presence for Folding@Home        ║
     ║          GPU Monitoring & Stats Display          ║
     ╚══════════════════════════════════════════════════╝
-
+               By Bandokii & VScode copilot
 
 WHAT IS FAHRPC?
 ═══════════════════════════════════════════════════════
@@ -24,13 +24,14 @@ are lost.
 SETUP INSTRUCTIONS
 ═══════════════════════════════════════════════════════
 
-Step 1: Install Dependencies
-───────────────────────────────
-  1. Run DPSETUP.bat as Administrator
+Step 1: Run Setup
+─────────────────
+  1. Run setup.bat (double-click or from command prompt)
   2. This will automatically:
-     • Set PowerShell execution policy
-     • Run the dependency installation script (dpscript.ps1)
+     • Check if uv is installed (installs if missing)
+     • Create virtual environment (.venv/)
      • Install all required Python packages
+     • Create RUN_FAHRPC.bat launcher for quick execution
   3. Monitor the console for any errors
   4. Check fah_error_log.txt if issues occur
 
@@ -43,12 +44,17 @@ After setup completes, ensure you have installed:
 
 Step 3: Start FAHRPC
 ─────────────────────
-  1. Run: python main.py
-  2. The console window will appear (or hide to tray if configured)
+Option A: Use the launcher (easiest)
+  1. Double-click RUN_FAHRPC.bat (created by setup.bat)
+  2. The console window will appear with status messages
+  3. Open Discord and you should see your folding status!
+
+Option B: Command line
+  1. Open command prompt or PowerShell in the project folder
+  2. Run: uv run python main.py
   3. Status messages show connection state:
      [OK] Discord connection stable.
      [OK] FAH connection restored.
-  4. Open Discord and you should see your folding status!
 
 Step 4: Access Console (Optional)
 ──────────────────────────────────
@@ -73,15 +79,52 @@ The icon appears in your Windows system tray with the app name and allows easy
 control without opening the console window.
 
 
+UNINSTALLING FAHRPC
+═══════════════════════════════════════════════════════
+
+To completely remove FAHRPC and all its dependencies:
+
+  1. Run UNINSTALL.bat (double-click or from command prompt)
+  2. Confirm the uninstall when prompted
+  3. The script will:
+     • Stop FAHRPC if running
+     • Remove virtual environment (.venv/)
+     • Delete all generated files and logs
+     • Remove autostart entries (Task Scheduler & Startup folder)
+     • Uninstall uv package manager
+  4. Your system will be restored to its pre-installation state
+
+After uninstall, you can safely delete the entire FAHRPC project folder.
+
+Note: If you want to keep uv for other projects, you can manually uninstall
+just FAHRPC by deleting the .venv folder and removing autostart entries.
+
+
 MAKE FAHRPC RUN ON STARTUP
 ═══════════════════════════════════════════════════════
 
-To automatically start FAHRPC when Windows boots:
+Option A: Using Task Scheduler (Recommended)
+──────────────────────────────────────────────
+  1. Press Windows+R and type: taskschd.msc
+  2. Click "Create Basic Task"
+  3. Name it "FAHRPC" and click Next
+  4. Set trigger to "At startup" and click Next
+  5. Set action to "Start a program"
+  6. Set program to: cmd.exe
+  7. Set arguments to: /c "cd /d path\to\FAHRPC && uv run python main.py"
+     (Replace path\to\FAHRPC with your actual FAHRPC folder path)
+  8. Click Finish
 
-  1. Create a shortcut to main.py
-  2. Press Windows+R and type: shell:startup
-  3. Press Enter to open the Startup folder
-  4. Paste the main.py shortcut into this folder
+Option B: Using Startup Folder (Simple)
+─────────────────────────────────────────
+  1. Press Windows+R and type: shell:startup
+  2. Press Enter to open the Startup folder
+  3. Create a new batch file with this content:
+     @echo off
+     cd /d "C:\path\to\FAHRPC"
+     uv run python main.py
+     (Replace C:\path\to\FAHRPC with your actual FAHRPC folder path)
+  4. Save it in the Startup folder
   5. FAHRPC will now launch automatically on next boot
 
 
@@ -174,14 +217,14 @@ Setup Issues
     • May require 500MB+ free disk space for Chromium binary
 
   Administrator Privileges Required
-    • DPSETUP.bat must be run as Administrator
-    • Right-click DPSETUP.bat → Run as Administrator
+    • setup.bat may require Administrator privileges
+    • Right-click setup.bat → Run as Administrator
     • Some policies may require UAC approval
 
   Import Errors When Running main.py
-    • Ensure setup completed without errors
+    • Ensure setup.bat completed without errors
     • Check all dependencies installed: pip list | findstr playwright pypresence nvidia-ml-py pystray Pillow pyadl
-    • Run setup again if any packages are missing
+    • Run setup.bat again if any packages are missing
 
 
 LOG FILES
@@ -199,7 +242,7 @@ Check this file to diagnose problems!
 DEPENDENCIES
 ═══════════════════════════════════════════════════════
 
-FAHRPC requires the following Python packages (automatically installed by setup):
+FAHRPC requires the following Python packages (automatically installed by setup.bat):
 
 Core Dependencies:
   • playwright          - Web scraping and browser automation
@@ -210,13 +253,19 @@ Core Dependencies:
   • Pillow (PIL)        - Image handling for tray icon
 
 Python Version:
-  • Python 3.7 or higher (3.10+ recommended)
+  • Python 3.10 or higher (3.12 recommended)
+
+Dependency Manager:
+  • uv - Ultra-fast Python package manager
+    Automatically handles virtual environment creation and dependency locking
+    No need to manually install pip or manage packages
 
 External Requirements:
   • Windows 10+ operating system
   • Discord client (running and logged in)
   • Folding@Home client with web interface enabled (port 7396)
   • GPU drivers (NVIDIA or AMD, as applicable)
-  • Administrator privileges for setup
+  • Administrator privileges for initial setup (if uv needs to be installed)
 
-All dependencies are installed automatically by DPSETUP.bat
+All dependencies are installed automatically by setup.bat
+uv handles everything - just run setup.bat and you're done!

@@ -1,5 +1,42 @@
-﻿__pycache__/
+﻿# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment & Config
 .env
-config.json
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+setup_log.txt
+setup_error_log.txt
+fah_error_log.txt
+
+# Generated
+.pytest_cache/
+.coverage
+htmlcov/

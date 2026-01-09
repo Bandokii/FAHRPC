@@ -1,0 +1,24 @@
+[project]
+name = "fahrpc"
+version = "1.0.0"
+description = "Folding@Home Discord Rich Presence - Monitor F@H progress via Discord"
+authors = [{name = "Bandokii"}]
+readme = "README.txt"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+
+dependencies = [
+    "playwright>=1.40.0",
+    "pypresence>=4.0.0",
+    "nvidia-ml-py>=12.535.108",
+    "pystray>=0.19.4",
+    "Pillow>=10.0.0",
+    "pyadl>=0.1",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+# uv-specific configuration
