@@ -34,7 +34,9 @@ Your Discord status will display:
 - **GPU** - NVIDIA or AMD with updated drivers
 - **Internet** - For Discord and FAH stats server
 
-> **Note:** Python is NOT required to be pre-installed. The setup script handles everything automatically!
+> **Note:** Python is NOT required to be pre-installed. The setup script handles everything automatically using Python 3.12.
+
+> **⚠️ Important:** If you have Python 3.14+ installed, the setup will automatically use Python 3.12 instead to ensure compatibility.
 
 ## Installation (Zip Download)
 
@@ -284,6 +286,12 @@ For example: `"web_url": "http://192.168.1.100:7396/"` to monitor another comput
 A: Download the latest zip, extract over your existing folder, and run `setup.bat` again.
 
 ## Changelog
+
+### Version 1.0.2 (January 2026)
+- Fixed Python 3.14 compatibility issue
+- Setup now enforces Python 3.10-3.13 via `--python 3.12`
+- Added `.python-version` file for uv compatibility
+- Prevents greenlet build failures on unsupported Python versions
 
 ### Version 1.0.1 (January 2026)
 - Fixed config/log file paths to use platformdirs

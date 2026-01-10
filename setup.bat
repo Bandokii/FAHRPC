@@ -60,9 +60,11 @@ if %errorlevel% equ 0 (
 echo.
 
 REM Step 2: Sync dependencies (uv reads pyproject.toml automatically)
+REM Use Python 3.12 explicitly to avoid compatibility issues with Python 3.14+
 echo [2/6] Installing Python dependencies (Attempt 1/!MAX_RETRIES!)...
 echo [%date% %time%] [STEP 2/6] Installing dependencies from pyproject.toml >> "%SETUP_LOGFILE%"
-uv sync >> "%SETUP_LOGFILE%" 2>&1
+echo [%date% %time%] Using Python 3.12 for compatibility >> "%SETUP_LOGFILE%"
+uv sync --python 3.12 >> "%SETUP_LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [WARNING] Dependency sync had issues on first attempt
     echo [%date% %time%] WARNING: Dependency sync failed on attempt 1 >> "%SETUP_LOGFILE%"
@@ -77,7 +79,7 @@ echo.
 REM Step 3: Install Playwright browser (required for web scraping)
 echo [3/6] Installing Playwright Chromium browser (Attempt 1/!MAX_RETRIES!)...
 echo [%date% %time%] [STEP 3/6] Installing Playwright Chromium browser >> "%SETUP_LOGFILE%"
-uv run playwright install chromium >> "%SETUP_LOGFILE%" 2>&1
+uv run --python 3.12 playwright install chromium >> "%SETUP_LOGFILE%" 2>&1
 if %errorlevel% neq 0 (
     echo [WARNING] Playwright installation had issues on first attempt
     echo [%date% %time%] WARNING: Playwright installation failed on attempt 1 >> "%SETUP_LOGFILE%"
@@ -109,7 +111,7 @@ REM Retry dependencies if failed
 if %DEPS_FAILED% equ 1 (
     echo [2/6] Retrying Python dependencies (Attempt !TOTAL_ATTEMPTS!/!MAX_RETRIES!)...
     echo [%date% %time%] Retrying dependencies - Attempt !TOTAL_ATTEMPTS! >> "%SETUP_LOGFILE%"
-    uv sync >> "%SETUP_LOGFILE%" 2>&1
+    uv sync --python 3.12 >> "%SETUP_LOGFILE%" 2>&1
     if %errorlevel% neq 0 (
         echo [WARNING] Dependencies still failing on retry !ATTEMPT_NUM!
         echo [%date% %time%] ERROR: Dependencies still failing after retry >> "%SETUP_LOGFILE%"
@@ -126,7 +128,7 @@ if %PLAYWRIGHT_FAILED% equ 1 (
     echo [3/6] Retrying Playwright installation (Attempt !TOTAL_ATTEMPTS!/!MAX_RETRIES!)...
     echo [%date% %time%] Retrying Playwright - Attempt !TOTAL_ATTEMPTS! >> "%SETUP_LOGFILE%"
     timeout /t 2 /nobreak >nul
-    uv run playwright install chromium >> "%SETUP_LOGFILE%" 2>&1
+    uv run --python 3.12 playwright install chromium >> "%SETUP_LOGFILE%" 2>&1
     if %errorlevel% neq 0 (
         echo [WARNING] Playwright still failing on retry !ATTEMPT_NUM!
         echo [%date% %time%] ERROR: Playwright still failing after retry >> "%SETUP_LOGFILE%"
@@ -154,7 +156,7 @@ if not exist "run_fahrpc.bat" (
         echo setlocal enabledelayedexpansion
         echo cd /d "%%~dp0"
         echo.
-        echo uv run python -m fahrpc.main
+        echo uv run --python 3.12 python -m fahrpc.main
         echo set EXITCODE=%%errorlevel%%
         echo.
         echo if %%EXITCODE%% equ 0 ^(
@@ -219,7 +221,7 @@ if %PLAYWRIGHT_FAILED% equ 1 (
 )
 
 echo [%date% %time%] Testing Python imports... >> "%SETUP_LOGFILE%"
-uv run python -c "import sys, importlib.util; deps=['playwright','pypresence','pynvml','pystray','PIL','pyadl','platformdirs']; missing=[d for d in deps if not importlib.util.find_spec(d)]; (print(f'ERROR: Missing {missing}'), sys.exit(1)) if missing else None; from fahrpc import load_config, DiscordRPC, GPUMonitor, FAHScraper, TrayIcon; print('OK: All dependencies and modules verified')" >> "%SETUP_LOGFILE%" 2>&1
+uv run --python 3.12 python -c "import sys, importlib.util; deps=['playwright','pypresence','pynvml','pystray','PIL','pyadl','platformdirs']; missing=[d for d in deps if not importlib.util.find_spec(d)]; (print(f'ERROR: Missing {missing}'), sys.exit(1)) if missing else None; from fahrpc import load_config, DiscordRPC, GPUMonitor, FAHScraper, TrayIcon; print('OK: All dependencies and modules verified')" >> "%SETUP_LOGFILE%" 2>&1
 if %errorlevel% equ 0 (
     echo [OK] All dependencies verified
     echo [%date% %time%] All dependencies verified successfully >> "%SETUP_LOGFILE%"
