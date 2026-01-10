@@ -1,0 +1,221 @@
+FAHRPC - Project Structure
+==========================
+
+FAHRPC/
+├── src/fahrpc/                    # Main Python package (source layout)
+│   ├── __init__.py               # Package initialization & exports
+│   ├── main.py                   # Entry point & main application loop
+│   ├── config.py                 # Configuration loading & management
+│   ├── hardware.py               # GPU monitoring (NVIDIA & AMD)
+│   ├── discord_rpc.py            # Discord RPC integration
+│   ├── scraper.py                # Web scraping for FAH stats
+│   ├── logger.py                 # Error logging utilities
+│   ├── tray.py                   # System tray icon & menu
+│   └── py.typed                  # PEP 561 type hints marker
+│
+├── pyproject.toml                # Project metadata & dependencies (PEP 621)
+├── manifest.in                   # Package distribution manifest
+├── README.md                      # Full documentation (281 lines)
+├── README.txt                     # Quick reference guide
+├── quick_start.txt               # Setup instructions
+│
+├── setup.bat                      # Automated installation script
+├── run_fahrpc.bat                # Application launcher
+│
+├── config.json                    # User configuration file
+├── fahrpc.ico                    # Windows icon file
+├── fahrpc.png                    # Logo/image asset
+├── license                        # MIT License text
+│
+├── .gitignore                     # Git ignore rules
+├── .github/                       # GitHub configuration
+│   └── (workflows, templates, etc.)
+│
+└── dist/                          # Build output (generated)
+    ├── fahrpc-1.0.0-py3-none-any.whl    # Wheel distribution
+    └── fahrpc-1.0.0.tar.gz              # Source distribution
+
+
+MODULE DESCRIPTIONS
+===================
+
+src/fahrpc/__init__.py
+  - Exports public API
+  - Version info & package metadata
+  - Imports key classes: DiscordRPC, GPUMonitor, FAHScraper, TrayIcon, etc.
+
+src/fahrpc/main.py (513 lines)
+  - Application entry point
+  - Main event loop & control flow
+  - Signal handling & graceful shutdown
+  - Restart & error recovery logic
+  - Discord status update coordination
+
+src/fahrpc/config.py
+  - Loads & parses config.json
+  - Provides configuration interface
+  - Settings validation
+  - Default configuration fallback
+
+src/fahrpc/hardware.py
+  - NVIDIA GPU monitoring (nvidia-ml-py)
+  - AMD GPU monitoring (pyadl)
+  - GPU temperature & utilization tracking
+  - GPU name parsing & formatting
+
+src/fahrpc/discord_rpc.py
+  - Discord RPC client wrapper (pypresence)
+  - Rich presence status updates
+  - Connection management
+  - Automatic retry logic
+
+src/fahrpc/scraper.py
+  - Web scraping engine (playwright)
+  - FAH web interface parsing
+  - Stats extraction (points, WUs, progress)
+  - Error handling & timeouts
+
+src/fahrpc/logger.py
+  - Error logging to file
+  - Log rotation & management
+  - Error categorization
+  - User-friendly error messages
+
+src/fahrpc/tray.py
+  - System tray integration (pystray)
+  - Tray icon & context menu
+  - Window show/hide control
+  - Application restart from tray
+
+src/fahrpc/py.typed
+  - PEP 561 marker for type checking
+  - Signals mypy/pyright to use inline type hints
+  - Empty file (presence only matters)
+
+
+ROOT FILES
+==========
+
+pyproject.toml (71 lines)
+  - Package name: fahrpc
+  - Version: 1.0.0
+  - Python requirement: >=3.10
+  - 6 core dependencies
+  - Console script entry point: fahrpc
+  - Build backend: setuptools
+  - Tool configs: ruff, uv
+
+README.md (281 lines)
+  - Feature overview
+  - Installation guide
+  - Usage instructions
+  - Configuration guide
+  - Troubleshooting section
+  - Development info
+  - FAQ & changelog
+
+setup.bat
+  - Automated setup script
+  - Downloads & installs uv
+  - Creates virtual environment
+  - Installs dependencies
+  - Installs Playwright browser
+  - Creates launcher batch file
+
+run_fahrpc.bat
+  - Simple launcher for application
+  - Uses uv to run python -m fahrpc.main
+  - Created by setup.bat
+
+config.json
+  - Discord client ID
+  - FAH web interface URL
+  - Temperature thresholds
+  - GPU monitoring settings
+  - Update interval (default: 15 seconds)
+
+
+BUILD & DISTRIBUTION
+====================
+
+dist/fahrpc-1.0.0-py3-none-any.whl (19.6 KB)
+  - Universal wheel (pure Python, py3)
+  - All modules included
+  - Entry points configured
+  - License included in dist-info/
+
+dist/fahrpc-1.0.0.tar.gz (55.9 KB)
+  - Source distribution
+  - Full source code
+  - Metadata files
+  - Ready for PyPI upload
+
+
+DEPENDENCIES
+============
+
+Runtime:
+  - playwright >=1.40.0    (web scraping & browser automation)
+  - pypresence >=4.0.0     (Discord RPC)
+  - nvidia-ml-py >=12.535.108  (NVIDIA GPU monitoring)
+  - pystray >=0.19.4       (system tray integration)
+  - Pillow >=10.0.0        (image handling)
+  - pyadl >=0.1            (AMD GPU monitoring)
+
+Development:
+  - ruff >=0.1.0           (code linting)
+
+Build:
+  - setuptools >=68.0
+  - wheel
+  - uv (package manager)
+
+External:
+  - Discord (client application)
+  - Folding@Home (with web interface)
+  - Windows 10/11 operating system
+
+
+ENTRY POINTS
+============
+
+Console Script: fahrpc
+  - Command: fahrpc
+  - Calls: fahrpc.main:main()
+  - Available globally after installation
+
+
+CLASSIFICATION
+==============
+
+Development Status: 4 - Beta
+Environment: Win32 (MS Windows)
+Audience: End Users/Desktop
+OS: Windows 10, Windows 11
+Python: 3.10, 3.11, 3.12
+Topics: Games/Entertainment, Internet, Utilities
+License: MIT
+
+
+VERSION HISTORY
+===============
+
+1.0.0 (January 2026)
+  - Initial PyPI release
+  - Modern Python src layout
+  - Command-line entry point
+  - Full GPU monitoring (NVIDIA + AMD)
+  - Discord Rich Presence
+  - System tray integration
+  - Comprehensive error logging
+  - Graceful shutdown & restart
+  - Configuration management
+
+
+PLATFORM SUPPORT
+================
+
+✅ Windows 10 (Primary)
+✅ Windows 11 (Primary)
+❌ Linux (Not supported - system tray, GPU drivers)
+❌ macOS (Not supported - system tray, GPU drivers)

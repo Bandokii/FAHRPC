@@ -36,7 +36,6 @@ setup_log.txt
 setup_error_log.txt
 fah_error_log.txt
 
-# Generated
+# Caches
+.ruff_cache/
 .pytest_cache/
-.coverage
-htmlcov/

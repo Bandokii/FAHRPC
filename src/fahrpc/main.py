@@ -10,23 +10,23 @@ caching, graceful shutdown, and retry logic.
 """
 
 import asyncio
-import time
-import sys
+import logging
 import os
 import re
-import threading
 import signal
-import logging
-from typing import Optional, Tuple, List
+import sys
+import threading
+import time
+from typing import Optional
 
-from modules import (
-    load_config,
-    setup_error_logging,
-    GPUMonitor,
-    FAHScraper,
+from fahrpc import (
     DiscordRPC,
+    FAHScraper,
+    GPUMonitor,
     TrayIcon,
-    set_console_visibility
+    load_config,
+    set_console_visibility,
+    setup_error_logging,
 )
 
 # Global control flags
@@ -53,7 +53,7 @@ RE_ANSI = re.compile(r'\033\[[0-9;]*m')
 def get_timestamp() -> str:
     """
     Returns a formatted white timestamp string.
-    
+
     Returns:
         Formatted timestamp with ANSI colors
     """
@@ -62,10 +62,10 @@ def get_timestamp() -> str:
 def strip_ansi(text: str) -> str:
     """
     Removes ANSI codes to calculate visible string length.
-    
+
     Args:
         text: String containing ANSI codes
-        
+
     Returns:
         String without ANSI codes
     """
@@ -74,20 +74,20 @@ def strip_ansi(text: str) -> str:
 def get_temp_color(temp: any, config: dict) -> str:
     """
     Returns the ANSI color code based on temperature thresholds.
-    
+
     Args:
         temp: Temperature value or "N/A"
         config: Configuration dictionary
-        
+
     Returns:
         ANSI color code string
     """
     if temp == "N/A":
         return COLORS['white']
-    
+
     thresholds = config['temperature']['thresholds']
     color_names = config['temperature']['colors']
-    
+
     if temp < thresholds['low']:
         return COLORS[color_names['low']]
     elif temp < thresholds['medium']:
@@ -98,19 +98,19 @@ def get_temp_color(temp: any, config: dict) -> str:
 def print_header(config: dict) -> None:
     """
     Prints ASCII logo header.
-    
+
     Args:
         config: Configuration dictionary
     """
     if not config['display']['show_header']:
         return
-    
+
     RED = COLORS['red']
     BLUE = COLORS['blue']
     GRAY = COLORS['gray']
     RESET = COLORS['reset']
     WHITE = COLORS['white']
-    
+
     lines = [
         rf"     {RED}______  ___   _   _{BLUE}  ______ ______  _____          ",
         rf"     {RED}|  ___|/ _ \ | | | |{BLUE} | ___ \| ___ \/  __ \         ",
@@ -119,11 +119,11 @@ def print_header(config: dict) -> None:
         rf"     {RED}| |   | | | || | | |{BLUE} | |\ \ | |    | \__/\         ",
         rf"     {RED}\_|   \_| |_/\_| |_/{BLUE} \_| \_|\_|     \____/         ",
     ]
-    
+
     signature = f"               {GRAY}By Bandokii & VSCode Copilot{RESET}"
     hz = "═"
     divider = f"           {BLUE}{hz * 14}{WHITE}{hz}{RED}{hz * 14}{RESET}"
-    
+
     print("\n" + "\n".join(lines))
     print(signature)
     print(f"{divider}\n")
@@ -131,12 +131,12 @@ def print_header(config: dict) -> None:
 async def retry_with_backoff(coro, max_retries: int = 3, initial_delay: float = 1.0) -> Optional[any]:
     """
     Execute a coroutine with exponential backoff retry logic.
-    
+
     Args:
         coro: Coroutine to execute
         max_retries: Maximum number of retry attempts
         initial_delay: Initial delay in seconds between retries
-        
+
     Returns:
         Result of the coroutine or None if all retries fail
     """
@@ -155,22 +155,22 @@ async def retry_with_backoff(coro, max_retries: int = 3, initial_delay: float = 
 async def main_logic() -> None:
     """Main application logic."""
     global logger
-    
+
     # Enable ANSI colors on Windows
     if sys.platform == "win32":
         os.system('color')
-    
+
     # Load configuration
     config = load_config()
-    
+
     # Print header
     print_header(config)
     print(f" {get_timestamp()} {COLORS['white']}[*] Initializing Hardware Monitor...{COLORS['reset']}")
-    
+
     # Initialize hardware monitor
     gpu_monitor = GPUMonitor(config)
     hardware_padding = " " * 13
-    
+
     # Display detected hardware
     ts = get_timestamp()
     if gpu_monitor.nvidia_count == 0:
@@ -179,7 +179,7 @@ async def main_logic() -> None:
         print(f" {ts} {COLORS['green']}[+] Found Nvidia GPU: {gpu_monitor.nvidia_count}{COLORS['reset']}")
         for name in gpu_monitor.nvidia_names:
             print(f"{hardware_padding}└─ {name}")
-    
+
     if gpu_monitor.amd_count == 0:
         print(f" {ts} {COLORS['red']}[-] Found AMD GPU: 0{COLORS['reset']}")
     else:
@@ -197,17 +197,16 @@ async def main_logic() -> None:
     except Exception as e:
         print(f" {get_timestamp()} {COLORS['red']}[!] Browser Error: {e}{COLORS['reset']}")
         return
-    
+
     # Initialize Discord RPC
     print(f" {get_timestamp()} {COLORS['white']}[*] Attempting Discord connection...{COLORS['reset']}")
     discord = DiscordRPC(config)
-    
+
     # State variables
     global_points, global_wus = "Synchronizing...", "Synchronizing..."
     last_known_project = None
     cycle_index = 0
     was_running_last_check = True
-    last_stats_sync_time = 0
     force_stats_sync = False
     sync_status = 'idle'
     fifty_percent_synced = False
@@ -215,9 +214,9 @@ async def main_logic() -> None:
     fah_lost_logged = False
     last_discord_status = False
     last_fah_status = False
-    
+
     update_interval = config['foldingathome']['update_interval']
-    
+
     try:
         while not restart_event.is_set() and not stop_event.is_set():
             # Connect to Discord if not connected with retry logic
@@ -236,7 +235,7 @@ async def main_logic() -> None:
                         last_discord_status = False
                     await asyncio.sleep(update_interval)
                     continue
-            
+
             try:
                 # Get FAH control data with error handling
                 try:
@@ -250,24 +249,24 @@ async def main_logic() -> None:
                         last_fah_status = False
                     await asyncio.sleep(update_interval)
                     continue
-                
+
                 if not last_fah_status:
                     print(f" {get_timestamp()} {COLORS['green']}[OK] FAH connection restored.{COLORS['reset']}")
                     last_fah_status = True
                     fah_lost_logged = False
-                
+
                 # Check for status changes
                 if is_running and not was_running_last_check:
                     print(f" {get_timestamp()} {COLORS['green']}[+] Folding has started/resumed.{COLORS['reset']}")
                     force_stats_sync = True
                 elif not is_running and was_running_last_check:
                     print(f" {get_timestamp()} {COLORS['yellow']}[!] Folding is currently paused.{COLORS['reset']}")
-                
+
                 was_running_last_check = is_running
-                
+
                 if is_running:
                     # Check if we need to sync stats
-                    current_time = time.time()
+                    time.time()
                     # Use first project for sync logic (legacy behavior)
                     percent_float = 0.0
                     proj_id = proj_ids[0] if proj_ids else "Active"
@@ -285,7 +284,7 @@ async def main_logic() -> None:
                         sync_status == 'idle' or
                         force_stats_sync
                     )
-                    
+
                     if needs_pull and sync_status != 'pending':
                         sync_status = 'pending'
                         force_stats_sync = False
@@ -294,7 +293,6 @@ async def main_logic() -> None:
                         new_pts, new_wus = await scraper.get_global_stats()
                         if new_pts:
                             global_points, global_wus = new_pts, new_wus
-                            last_stats_sync_time = current_time
                             sync_status = 'synced'
                             # Mark 50% sync as done if triggered by 50%
                             if percent_float >= 50.0:
@@ -302,7 +300,7 @@ async def main_logic() -> None:
                             print(f" {get_timestamp()} {COLORS['green']}[OK] StatSync: {COLORS['white']}{global_points} pts │ {global_wus} WUs{COLORS['reset']}")
                         else:
                             sync_status = 'idle'
-                    
+
                     # Get GPU data with error handling
                     try:
                         gpu_data, utilizations, temperatures = gpu_monitor.get_all_gpu_data()
@@ -310,7 +308,7 @@ async def main_logic() -> None:
                         if logger:
                             logger.error(f"GPU data retrieval failed: {e}")
                         gpu_data, utilizations, temperatures = [], [], []
-                    
+
                     # Format GPU lines for console
                     gpu_lines_console = []
                     for name, util, temp in gpu_data:
@@ -322,7 +320,7 @@ async def main_logic() -> None:
                         else:
                             name_colored = f"{COLORS['red']}{name}{COLORS['reset']}"
                         gpu_lines_console.append(f"{name_colored} │ {util}% - {t_color}{temp_display}{COLORS['reset']}")
-                    
+
                     # Format for RPC
                     if not gpu_lines_console:
                         rpc_gpu_text = "GPU Info Unavailable"
@@ -339,17 +337,17 @@ async def main_logic() -> None:
                             avg_temp = int(sum(temperatures) / len(temperatures)) if temperatures else "N/A"
                             temp_str = f"{avg_temp}°c" if avg_temp != "N/A" else "N/A"
                             rpc_gpu_text = f"GPUs: {total_gpus} │ x̄ {avg_util}% - x̄ {temp_str}"
-                        
+
                         # Format console output with padding
                         prefix_str = f"FAH{COLORS['blue']}RPC{COLORS['reset']} -"
                         ts_str = get_timestamp()
                         padding_len = len(strip_ansi(ts_str)) + 1 + len(strip_ansi(prefix_str)) + 1
                         padding_str = " " * padding_len
-                        
+
                         console_output = gpu_lines_console[0]
                         for line in gpu_lines_console[1:]:
                             console_output += f"\n{padding_str}{line}"
-                    
+
                     # Console logging cycles (unchanged)
                     if cycle_index % 2 == 0:
                         indent = ' ' * 21
@@ -385,7 +383,7 @@ async def main_logic() -> None:
                     else:
                         detail_text = f"pTotal: {global_points}"
                         state_text = f"WUs Completed: {global_wus}"
-                    
+
                     # Update Discord RPC with error handling
                     try:
                         if await discord.update(detail_text, state_text):
@@ -411,89 +409,91 @@ async def main_logic() -> None:
                     except Exception as e:
                         if logger:
                             logger.debug(f"Discord RPC clear failed: {e}")
-                
+
             except Exception as e:
                 if logger:
                     logger.error(f"Main loop iteration error: {e}")
                 await asyncio.sleep(update_interval)
                 continue
-            
+
             await asyncio.sleep(update_interval)
-    
+
     finally:
         # Graceful shutdown and cleanup
         print(f"\n {get_timestamp()} {COLORS['yellow']}[*] Shutting down gracefully...{COLORS['reset']}")
-        
+
         try:
             await discord.close()
             print(f" {get_timestamp()} {COLORS['green']}[OK] Discord connection closed.{COLORS['reset']}")
         except Exception as e:
             if logger:
                 logger.error(f"Error closing Discord connection: {e}")
-        
+
         try:
             await scraper.close()
             print(f" {get_timestamp()} {COLORS['green']}[OK] Scraper engine closed.{COLORS['reset']}")
         except Exception as e:
             if logger:
                 logger.error(f"Error closing scraper: {e}")
-        
+
         await asyncio.sleep(0.5)
         print(f" {get_timestamp()} {COLORS['green']}[OK] Shutdown complete.{COLORS['reset']}")
 
 async def main_loop() -> None:
     """
     Main wrapper to handle restart/stop logic.
-    
+
     Manages the application lifecycle including restarts and graceful shutdown.
     """
     while not stop_event.is_set():
         restart_event.clear()
         task = asyncio.create_task(main_logic())
-        
+
         while not restart_event.is_set() and not stop_event.is_set():
             await asyncio.sleep(1)
-        
+
         task.cancel()
         try:
             await task
         except asyncio.CancelledError:
             pass
-        
+
         await asyncio.sleep(0.5)
-        
+
         if restart_event.is_set():
             print(f"\n {get_timestamp()} {COLORS['yellow']}[*] Restarting logic...{COLORS['reset']}")
             await asyncio.sleep(1)
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point for fahrpc command."""
     # Load config
     config = load_config()
-    
+
     # Setup error logging
+    global logger
     logger = setup_error_logging(
         config['logging']['error_log_file'],
         config['logging']['suppress_asyncio_warnings']
     )
-    
+
     # Define graceful shutdown handler
     def signal_handler(signum: int, frame) -> None:
         """Handle shutdown signals (SIGTERM, SIGINT)."""
         print(f"\n\n {get_timestamp()} {COLORS['yellow']}[*] Received shutdown signal ({signum})...{COLORS['reset']}")
         stop_event.set()
-    
+
     # Register signal handlers for graceful shutdown
     if sys.platform != "win32":
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
-    
+
     # Set console visibility
     set_console_visibility(not config['display']['start_hidden'])
-    
+
     # Start tray icon
     tray = TrayIcon(config, restart_event, stop_event)
     tray.start()
-    
+
     # Run main loop
     try:
         asyncio.run(main_loop())
@@ -507,3 +507,6 @@ if __name__ == "__main__":
         input("Press Enter to close...")
     finally:
         GPUMonitor.shutdown()
+
+if __name__ == "__main__":
+    main()

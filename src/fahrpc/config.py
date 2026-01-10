@@ -5,8 +5,7 @@ Handles loading, validating, and managing config.json
 
 import json
 import logging
-from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict
 
 logger = logging.getLogger('FAHRPC')
 DEFAULT_CONFIG = {
@@ -29,7 +28,7 @@ DEFAULT_CONFIG = {
     "display": {
         "start_hidden": True,
         "show_header": True,
-        "icon_file": "FAHRPC.png"
+        "icon_file": "fahrpc.png"
     },
     "hardware": {
         "nvidia": {"enabled": True, "strip_prefix": "NVIDIA GeForce "},
@@ -44,11 +43,11 @@ DEFAULT_CONFIG = {
 def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively merge two dictionaries.
-    
+
     Args:
         base: Base dictionary (lower priority)
         override: Override dictionary (higher priority)
-        
+
     Returns:
         Merged dictionary
     """
@@ -63,10 +62,10 @@ def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
 def validate_config(config: Dict[str, Any]) -> tuple[bool, list[str]]:
     """
     Validate required config keys are present.
-    
+
     Args:
         config: Configuration dictionary to validate
-        
+
     Returns:
         Tuple of (is_valid, list_of_errors)
     """
@@ -77,7 +76,7 @@ def validate_config(config: Dict[str, Any]) -> tuple[bool, list[str]]:
         'hardware': ['hardware'],
         'logging.error_log_file': ['logging', 'error_log_file']
     }
-    
+
     errors = []
     for key_name, key_path in required_keys.items():
         value = config
@@ -86,21 +85,21 @@ def validate_config(config: Dict[str, Any]) -> tuple[bool, list[str]]:
                 value = value[path]
         except (KeyError, TypeError):
             errors.append(f"Missing required config key: {key_name}")
-    
+
     return len(errors) == 0, errors
 
 def load_config(config_path: str = "config.json") -> Dict[str, Any]:
     """
     Load configuration from JSON file with fallback to defaults.
-    
+
     Creates default config file if it doesn't exist and validates on load.
-    
+
     Args:
         config_path: Path to config.json file
-        
+
     Returns:
         Merged configuration dictionary
-        
+
     Raises:
         SystemExit: If config validation fails
     """
@@ -108,14 +107,14 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
         with open(config_path, 'r') as f:
             user_config = json.load(f)
             merged = merge_dicts(DEFAULT_CONFIG, user_config)
-            
+
             # Validate configuration
             is_valid, errors = validate_config(merged)
             if not is_valid:
                 for error in errors:
                     print(f"[CONFIG ERROR] {error}")
                 raise SystemExit(1)
-            
+
             return merged
     except FileNotFoundError:
         print(f"Config file '{config_path}' not found. Creating default config...")

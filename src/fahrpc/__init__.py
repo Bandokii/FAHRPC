@@ -3,10 +3,10 @@ FAHRPC Modules Package
 """
 
 from .config import load_config
-from .logger import setup_error_logging
-from .hardware import GPUMonitor
-from .scraper import FAHScraper
 from .discord_rpc import DiscordRPC
+from .hardware import GPUMonitor
+from .logger import setup_error_logging
+from .scraper import FAHScraper
 from .tray import TrayIcon, set_console_visibility
 
 __all__ = [

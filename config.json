@@ -31,7 +31,7 @@
   "display": {
     "start_hidden": true,
     "show_header": true,
-    "icon_file": "FAHRPC.png"
+    "icon_file": "fahrpc.png"
   },
   "hardware": {
     "nvidia": {

@@ -1,0 +1,237 @@
+FAHRPC - QUICK START GUIDE
+==========================
+
+INSTALLATION (One Time)
+───────────────────────
+
+1. Run setup.bat (double-click)
+   - Installs uv package manager (if needed)
+   - Creates virtual environment
+   - Installs all dependencies
+   - Downloads Playwright browser
+   - Creates run_fahrpc.bat launcher
+   - Setup complete!
+
+
+RUNNING FAHRPC
+──────────────
+
+Method 1: Double-click run_fahrpc.bat (EASIEST)
+  → Application starts immediately
+  → Console shows status updates
+  → Discord Rich Presence activates
+
+Method 2: Command line
+  → Open PowerShell/Command Prompt in project folder
+  → Type: uv run python -m fahrpc.main
+  → Press Enter
+
+Method 3: Global command (if installed with 'uv tool install .')
+  → Just type: fahrpc
+  → Works from anywhere on your system
+
+
+WHAT TO SEE
+───────────
+
+When FAHRPC starts, you should see:
+
+[HH:MM:SS] [*] Initializing Hardware Monitor...
+[HH:MM:SS] [+] Found Nvidia GPU: 1
+             └─ GeForce RTX 4090
+[HH:MM:SS] [+] Found AMD GPU: 0
+[HH:MM:SS] [*] Launching Web Scraper engine...
+[HH:MM:SS] [OK] Scraper engine ready.
+[HH:MM:SS] [*] Attempting Discord connection...
+[HH:MM:SS] [OK] Discord connection stable.
+[HH:MM:SS] FAHRPC - Project │ 12345 - 50%
+
+Then every 15 seconds you'll see status updates like:
+[HH:MM:SS] FAHRPC - GPU Name │ 95% - 75°c
+[HH:MM:SS] FAHRPC - Project │ 12345 - 75%
+
+
+DISCORD INTEGRATION
+───────────────────
+
+Your Discord status will show:
+
+Option 1 (Points & WUs):
+  Project: pTotal: 1,234,567 pts
+  Status: WUs Completed: 256
+
+Option 2 (GPU Stats):
+  Project: GeForce RTX 4090 │ 95% - 75°c
+  Status: Project 12345 - 75%
+
+Option 3 (Multi-GPU):
+  Project: GPUs: 2 │ x̄ 87% - x̄ 72°c
+  Status: "hyper modern space heater"
+
+Status alternates between these displays every 30 seconds.
+
+
+TROUBLESHOOTING
+───────────────
+
+FAHRPC won't start:
+  → Check fah_error_log.txt for error messages
+  → Ensure Discord is running and logged in
+  → Ensure Folding@Home is running
+  → Check Windows Firewall isn't blocking
+
+No Discord connection:
+  → Make sure Discord.exe is running
+  → Try restarting Discord
+  → FAHRPC will auto-retry
+
+No GPU stats:
+  → Update your GPU drivers
+  → Check config.json has nvidia/amd enabled
+  → See README.txt > TROUBLESHOOTING section
+
+Setup failed:
+  → Try running setup.bat as Administrator
+  → Check internet connection
+  → See README.txt > TROUBLESHOOTING section
+
+
+SYSTEM TRAY MENU
+────────────────
+
+Right-click the FAHRPC icon in system tray:
+
+Show Console  → Display main window
+Hide Console  → Minimize to tray
+Restart       → Restart FAHRPC
+Exit          → Close FAHRPC
+
+
+AUTOSTART (OPTIONAL)
+────────────────────
+
+Make FAHRPC run at Windows startup:
+
+1. Press Windows+R
+2. Type: taskschd.msc
+3. Click "Create Basic Task"
+4. Name: FAHRPC
+5. Trigger: At startup
+6. Action: Start program
+7. Program: cmd.exe
+8. Arguments: /c "cd /d C:\path\to\FAHRPC && uv run python -m fahrpc.main"
+
+Replace C:\path\to\FAHRPC with your actual path.
+
+
+UNINSTALL (OPTIONAL)
+────────────────────
+
+Simply delete the FAHRPC folder:
+  → All files removed
+  → No side effects
+  → (Optional: uninstall uv if not needed for other projects)
+
+
+CONFIGURATION
+──────────────
+
+Edit config.json to customize:
+  • Discord client ID
+  • Folding@Home interface URL
+  • Update interval (default: 15s)
+  • Temperature thresholds & colors
+  • Which GPUs to monitor (NVIDIA/AMD)
+  • Display options (start hidden, etc.)
+
+Default config works for most setups!
+
+
+REQUIREMENTS CHECKLIST
+──────────────────────
+
+Before running FAHRPC, ensure:
+
+✓ Windows 10 or higher
+✓ Discord installed and running
+✓ Logged in to Discord
+✓ Folding@Home installed
+✓ F@H web interface enabled (port 7396)
+✓ GPU drivers installed (NVIDIA or AMD)
+✓ Python 3.10+ (installed by setup.bat)
+
+
+HELPFUL COMMANDS
+────────────────
+
+View error log:
+  → Open fah_error_log.txt
+
+Edit configuration:
+  → Open config.json in notepad
+
+Reinstall dependencies:
+  → Run setup.bat again
+
+Check uv version:
+  → Open PowerShell, type: uv --version
+
+Install globally:
+  → uv tool install .
+  → Then just type: fahrpc
+
+
+KEY FILES
+─────────
+
+README.txt               → Full documentation
+PROJECT_STRUCTURE.txt   → Technical overview
+REFACTORING_SUMMARY.md  → Implementation details
+config.json             → Configuration file
+fah_error_log.txt       → Error log (created on first run)
+pyproject.toml          → Project metadata
+
+
+SUPPORT
+───────
+
+For issues or questions:
+  1. Check fah_error_log.txt for error details
+  2. See README.txt > TROUBLESHOOTING section
+  3. Review config.json settings
+  4. Check GitHub issues (if available)
+
+
+FEEDBACK
+────────
+
+To report bugs or suggest features:
+  → GitHub: https://github.com/Bandokii/FAHRPC
+  → (Repository link if available)
+
+
+TIPS & TRICKS
+─────────────
+
+• Keep Discord running in background for best results
+• GPU monitoring requires up-to-date drivers
+• Temperature colors: Green (cool) → Orange (warm) → Red (hot)
+• Use Task Scheduler for reliable autostart
+• Hide console with tray menu to keep it out of the way
+• Check config.json for advanced customization
+
+
+WHAT'S NEW (Refactoring)
+────────────────────────
+
+• Modern Python src/ layout structure
+• Professional packaging ready for PyPI
+• Command-line entry point: fahrpc
+• Global installation support
+• Cleaner imports and better organization
+• Same functionality, better structure!
+
+For technical details, see REFACTORING_SUMMARY.md
+
+
+Happy Folding at Home! 🏠

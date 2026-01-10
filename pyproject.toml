@@ -1,11 +1,34 @@
 [project]
 name = "fahrpc"
 version = "1.0.0"
-description = "Folding@Home Discord Rich Presence - Monitor F@H progress via Discord"
-authors = [{name = "Bandokii"}]
-readme = "README.txt"
-license = {text = "MIT"}
+description = "Folding@Home Discord Rich Presence - Monitor GPU folding progress in Discord"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
+authors = [{name = "Bandokii"}]
+keywords = [
+    "folding-at-home",
+    "discord",
+    "rich-presence",
+    "gpu-monitoring",
+    "nvidia",
+    "amd",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+    "Topic :: Internet",
+    "Topic :: Utilities",
+]
 
 dependencies = [
     "playwright>=1.40.0",
@@ -15,6 +38,27 @@ dependencies = [
     "Pillow>=10.0.0",
     "pyadl>=0.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Bandokii/FAHRPC"
+Repository = "https://github.com/Bandokii/FAHRPC.git"
+Documentation = "https://github.com/Bandokii/FAHRPC#readme"
+Issues = "https://github.com/Bandokii/FAHRPC/issues"
+
+[project.scripts]
+fahrpc = "fahrpc.main:main"
+
+[project.optional-dependencies]
+dev = ["ruff>=0.1.0"]
+
+[tool.setuptools]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]  # PEP 8 errors, Pyflakes, warnings, isort imports
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

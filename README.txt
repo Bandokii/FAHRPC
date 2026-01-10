@@ -21,17 +21,41 @@ automatically disables Rich Presence when folding is paused or connections
 are lost.
 
 
+PROJECT STRUCTURE
+═══════════════════════════════════════════════════════
+
+FAHRPC uses a modern Python src layout for better packaging and distribution:
+
+  FAHRPC/
+  ├── src/fahrpc/           (Main package directory)
+  │   ├── __init__.py       (Package exports)
+  │   ├── main.py           (Application entry point)
+  │   ├── config.py         (Configuration loading)
+  │   ├── logger.py         (Error logging)
+  │   ├── hardware.py       (GPU monitoring)
+  │   ├── scraper.py        (Web scraping)
+  │   ├── discord_rpc.py    (Discord integration)
+  │   └── tray.py           (System tray icon)
+  ├── config.json           (User configuration)
+  ├── main.py               (Root wrapper for compatibility)
+  ├── pyproject.toml        (Project metadata & dependencies)
+  ├── setup.bat             (Complete setup script)
+  ├── run_fahrpc.bat        (Launcher, created by setup)
+  └── README.txt            (This file)
+
+
 SETUP INSTRUCTIONS
 ═══════════════════════════════════════════════════════
 
 Step 1: Run Setup
 ─────────────────
-  1. Run MAIN_SETUP.bat (it will pull the other setupfile automatically)
+  1. Run setup.bat (double-click it)
   2. This will automatically:
      • Check if uv is installed (installs if missing)
      • Create virtual environment (.venv/)
      • Install all required Python packages
-     • Create RUN_FAHRPC.bat launcher for quick execution
+     • Download Playwright Chromium browser
+     • Create run_fahrpc.bat launcher for quick execution
   3. Monitor the console for any errors
   4. Check fah_error_log.txt if issues occur
 
@@ -46,16 +70,21 @@ After setup completes, ensure you have installed:
 Step 3: Start FAHRPC
 ─────────────────────
 Option A: Use the launcher (easiest)
-  1. Double-click RUN_FAHRPC.bat (created by setup.bat)
+  1. Double-click run_fahrpc.bat (created by setup.bat)
   2. The console window will appear with status messages
   3. Open Discord and you should see your folding status!
 
 Option B: Command line
   1. Open command prompt or PowerShell in the project folder
-  2. Run: uv run python main.py
+  2. Run: uv run python -m fahrpc.main
   3. Status messages show connection state:
      [OK] Discord connection stable.
      [OK] FAH connection restored.
+
+Option C: Global installation (advanced)
+  1. After setup, run: uv tool install .
+  2. Then simply type: fahrpc (from anywhere on your system)
+  3. This installs FAHRPC as a global command-line tool
 
 Step 4: Access Console (Optional)
 ──────────────────────────────────
@@ -83,36 +112,17 @@ control without opening the console window.
 UNINSTALLING FAHRPC
 ═══════════════════════════════════════════════════════
 
-To completely remove FAHRPC and all its dependencies:
+To remove FAHRPC:
 
-  1. Run UNINSTALL.bat (double-click or from command prompt)
-  2. Confirm the uninstall when prompted
-  3. The script will:
-     • Stop FAHRPC if running
-     • Remove virtual environment (.venv/)
-     • Delete all generated files and logs
-     • Remove autostart entries (Task Scheduler & Startup folder)
-     • Create UV_UNINSTALL.txt with instructions for removing uv
-  4. Your system will be partially restored to its pre-installation state
+  1. Delete the FAHRPC project folder
 
-uv Package Manager Removal:
-  UNINSTALL.bat does not automatically remove uv (in case you use it for other
-  projects). Instead, it creates a file named UV_UNINSTALL.txt containing
-  detailed step-by-step instructions for manual uv removal. Simply follow those
-  instructions if you want to completely uninstall uv from your system.
+That's it! All application files and the virtual environment are removed.
 
-Python Cleanup:
-If you installed Python specifically for FAHRPC and no longer need it, you can
-uninstall it manually through Windows Settings → Apps. However, if Python was
-already on your system or you use it for other projects, leave it installed.
+Note: The uv package manager will remain on your system as a standalone tool.
+If you don't need uv for other projects, you can uninstall it separately by
+following the official instructions at:
 
-After Uninstall:
-  • UV_UNINSTALL.txt contains instructions to remove uv (if desired)
-  • You can safely delete the entire FAHRPC project folder
-  • Keep Python and uv if you use them for other projects
-
-Note: If you want to keep uv for other projects, you can manually uninstall
-just FAHRPC by deleting the .venv folder and removing autostart entries.
+  https://docs.astral.sh/uv/getting-started/installation/#uninstallation
 
 
 MAKE FAHRPC RUN ON STARTUP
@@ -126,18 +136,25 @@ Option A: Using Task Scheduler (Recommended)
   4. Set trigger to "At startup" and click Next
   5. Set action to "Start a program"
   6. Set program to: cmd.exe
-  7. Set arguments to: /c "cd /d path\to\FAHRPC && uv run python main.py"
+  7. Set arguments to: /c "cd /d path\to\FAHRPC && uv run python -m fahrpc.main"
      (Replace path\to\FAHRPC with your actual FAHRPC folder path)
   8. Click Finish
 
-Option B: Using Startup Folder (Simple)
+Option B: Global command startup (if using 'uv tool install')
+──────────────────────────────────────────────────────────────
+  1. Follow steps 1-5 above
+  2. Set program to: cmd.exe
+  3. Set arguments to: /c "fahrpc"
+  4. This will start FAHRPC as a global command
+
+Option C: Using Startup Folder (Simple)
 ─────────────────────────────────────────
   1. Press Windows+R and type: shell:startup
   2. Press Enter to open the Startup folder
   3. Create a new batch file with this content:
      @echo off
      cd /d "C:\path\to\FAHRPC"
-     uv run python main.py
+     uv run python -m fahrpc.main
      (Replace C:\path\to\FAHRPC with your actual FAHRPC folder path)
   4. Save it in the Startup folder
   5. FAHRPC will now launch automatically on next boot
@@ -227,19 +244,19 @@ Setup Issues
 
   Playwright Installation Fails
     • Ensure internet connection is stable
-    • Run MAIN_SETUP.bat again - installation is idempotent
+    • Run setup.bat again - installation is idempotent
     • Check fah_error_log.txt for specific errors
     • May require 500MB+ free disk space for Chromium binary
 
   Administrator Privileges Required
-    • MAIN_SETUP.bat may require Administrator privileges
-    • Right-click MAIN_SETUP.bat → Run as Administrator
+    • setup.bat may require Administrator privileges
+    • Right-click setup.bat → Run as Administrator
     • Some policies may require UAC approval
 
   Import Errors When Running main.py
-    • Ensure MAIN_SETUP.bat completed without errors
+    • Ensure setup.bat completed without errors
     • Check all dependencies installed: pip list | findstr playwright pypresence nvidia-ml-py pystray Pillow pyadl
-    • Run MAIN_SETUP.bat again if any packages are missing
+    • Run setup.bat again if any packages are missing
 
 
 LOG FILES
@@ -257,7 +274,7 @@ Check this file to diagnose problems!
 DEPENDENCIES
 ═══════════════════════════════════════════════════════
 
-FAHRPC requires the following Python packages (automatically installed by MAIN_SETUP.bat):
+FAHRPC requires the following Python packages (automatically installed by setup.bat):
 
 Core Dependencies:
   • playwright          - Web scraping and browser automation
@@ -282,5 +299,26 @@ External Requirements:
   • GPU drivers (NVIDIA or AMD, as applicable)
   • Administrator privileges for initial setup (if uv needs to be installed)
 
-All dependencies are installed automatically by MAIN_SETUP.bat
-uv handles everything - just run MAIN_SETUP.bat and you're done!
+All dependencies are installed automatically by setup.bat
+uv handles everything - just run setup.bat and you're done!
+
+
+FUTURE: PUBLISHING TO PYPI
+═══════════════════════════════════════════════════════
+
+The new src layout makes FAHRPC ready for PyPI distribution. In the future,
+you can publish FAHRPC globally with:
+
+  1. Update version in pyproject.toml
+  2. Run: uv build
+  3. Run: uv publish
+
+Users will then be able to install FAHRPC with a single command:
+  uv tool install fahrpc
+
+Or with pip:
+  pip install fahrpc
+
+This requires the project to be published to https://pypi.org
+To verify the name "fahrpc" is available:
+  Visit: https://pypi.org/project/fahrpc/

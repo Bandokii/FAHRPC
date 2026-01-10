@@ -3,16 +3,17 @@ Discord RPC module for FAHRPC
 Manages Discord Rich Presence connection and updates with retry logic
 """
 
-from datetime import datetime
-from typing import Dict, Any, Optional
 import logging
+from datetime import datetime
+from typing import Any, Dict, Optional
+
 from pypresence import AioPresence
 
 logger = logging.getLogger('FAHRPC')
 
 class DiscordRPC:
     """Manages Discord Rich Presence with connection status tracking."""
-    
+
     def __init__(self, config: Dict[str, Any]) -> None:
         """
         Initialize Discord RPC manager.
@@ -23,7 +24,7 @@ class DiscordRPC:
         self.config = config
         self.rpc: Optional[AioPresence] = None
         self.connected: bool = False
-    
+
     async def connect(self) -> bool:
         """
         Connect to Discord.
@@ -40,7 +41,7 @@ class DiscordRPC:
             self.rpc = None
             self.connected = False
             return False
-    
+
     async def update(self, details: str, state: str) -> bool:
         """
         Update Rich Presence.
@@ -54,7 +55,7 @@ class DiscordRPC:
         """
         if not self.connected or not self.rpc:
             return False
-        
+
         try:
             await self.rpc.update(
                 details=details,
@@ -70,21 +71,21 @@ class DiscordRPC:
             self.connected = False
             self.rpc = None
             return False
-    
+
     async def clear(self) -> None:
         """Clear the Rich Presence display."""
         if self.rpc:
             try:
                 await self.rpc.clear()
-            except:
+            except Exception:
                 pass
-    
+
     async def close(self) -> None:
         """Close the RPC connection and cleanup resources."""
         if self.rpc:
             try:
                 await self.rpc.close()
-            except:
+            except Exception:
                 pass
         self.connected = False
         self.rpc = None
