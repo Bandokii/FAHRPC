@@ -144,13 +144,20 @@ class FAHScraper:
         Returns:
             Tuple of (points, work_units) or (None, None) on error
         """
+        # Check if username is configured
+        username = self.config['foldingathome'].get('username', '')
+        if not username or username == 'YOUR_FAH_USERNAME':
+            logger.warning("FAH username not configured in config.json - stats lookup disabled")
+            return None, None
+
         # Check cache
         current_time = time.time()
         if self._stats_cache and (current_time - self._cache_timestamp) < self._cache_ttl:
             return self._stats_cache
         try:
+            stats_url = f"https://v8-5.foldingathome.org/stats?user={username}"
             await self.stats_page.goto(
-                self.config['foldingathome']['stats_url'],
+                stats_url,
                 wait_until="networkidle",
                 timeout=10000
             )

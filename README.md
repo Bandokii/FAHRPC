@@ -287,6 +287,12 @@ A: Download the latest zip, extract over your existing folder, and run `setup.ba
 
 ## Changelog
 
+### Version 1.0.3 (January 2026)
+- Added `username` field to config for FAH stats lookup
+- Stats URL now built dynamically from username
+- Proper warning when username not configured
+- StatSync disabled gracefully if no username set
+
 ### Version 1.0.2 (January 2026)
 - Fixed Python 3.14 compatibility issue
 - Setup now enforces Python 3.10-3.13 via `--python 3.12`
