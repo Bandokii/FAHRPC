@@ -29,59 +29,56 @@ Your Discord status will display:
 ## Requirements
 
 - **Windows 10/11** - Windows operating system
-- **Python 3.10+** - Installed automatically by setup
 - **Discord** - Running and logged in
 - **Folding@Home** - With web interface enabled (port 7396)
 - **GPU** - NVIDIA or AMD with updated drivers
 - **Internet** - For Discord and FAH stats server
 
-## Installation
+> **Note:** Python is NOT required to be pre-installed. The setup script handles everything automatically!
 
-### Quick Start (Windows)
+## Installation (Zip Download)
 
-1. **Download** the FAHRPC folder
-2. **Run** `setup.bat` (double-click)
-3. **Launch** `run_fahrpc.bat` when setup completes
-4. **View** your Folding@Home progress in Discord!
+### Step 1: Download
+
+1. Go to the [Releases](https://github.com/Bandokii/FAHRPC/releases) page
+2. Download the latest `FAHRPC-vX.X.X.zip` file
+3. Extract the zip to your desired location (e.g., `C:\FAHRPC`)
+
+### Step 2: Run Setup
+
+1. Open the extracted `FAHRPC` folder
+2. **Double-click `setup.bat`**
+3. Wait for setup to complete (first run may take 1-2 minutes)
 
 The setup script automatically:
-- Installs uv package manager (if needed)
+- Installs the uv package manager (if needed)
 - Creates a virtual environment
-- Installs all dependencies
-- Generates the launcher script
+- Installs all Python dependencies
+- Downloads browser components for web scraping
+- Generates the `run_fahrpc.bat` launcher
 
-### Global Installation (Advanced)
+### Step 3: Launch
 
-After initial setup, install globally for system-wide access:
+1. **Double-click `run_fahrpc.bat`**
+2. Check your Discord status - you should see Folding@Home info!
 
-```bash
-uv tool install .
-```
-
-Then simply type `fahrpc` from anywhere to start the application.
+That's it! 🎉
 
 ## Usage
 
-### Run FAHRPC
+### Running FAHRPC
 
-**Option 1: Batch Launcher (Easiest)**
-```
-Double-click run_fahrpc.bat
-```
+Simply **double-click `run_fahrpc.bat`** in your FAHRPC folder.
 
-**Option 2: Command Line**
-```bash
-uv run python -m fahrpc.main
-```
+The application will:
+- Connect to Discord
+- Monitor your Folding@Home progress
+- Display stats in your Discord status
+- Minimize to system tray
 
-**Option 3: Global Command (If installed globally)**
-```bash
-fahrpc
-```
+### System Tray
 
-### System Tray Menu
-
-Right-click the FAHRPC icon in your system tray to:
+Once running, FAHRPC sits in your system tray. Right-click the icon to:
 - Show/hide console window
 - Restart application
 - Exit cleanly
@@ -106,26 +103,12 @@ Edit `config.json` to customize:
 2. Click "Create Basic Task"
 3. Name: `FAHRPC`, Trigger: `At startup`
 4. Action: Start program
-5. Program: `cmd.exe`
-6. Arguments: `/c "cd /d C:\path\to\FAHRPC && uv run python -m fahrpc.main"`
-
-### Using Global Command
-
-If installed globally with `uv tool install .`:
-
-```
-Arguments: /c "fahrpc"
-```
+5. Program: `C:\FAHRPC\run_fahrpc.bat` (use your actual path)
 
 ### Using Startup Folder
 
 1. Press `Windows+R` → type `shell:startup`
-2. Create batch file with:
-```batch
-@echo off
-cd /d "C:\path\to\FAHRPC"
-uv run python -m fahrpc.main
-```
+2. Create a shortcut to `run_fahrpc.bat` in this folder
 
 ## Troubleshooting
 
@@ -150,18 +133,53 @@ uv run python -m fahrpc.main
 - Disable unused GPU type in config.json
 - Check web scraper timeouts in error log
 
-### Playwright Installation Issues
+### Setup Issues
 - Ensure stable internet connection
-- Run `setup.bat` again (idempotent)
-- May require 500MB+ free disk space
+- Run `setup.bat` again (safe to run multiple times)
+- May require 500MB+ free disk space for browser components
+
+## Updating
+
+To update FAHRPC:
+1. Download the latest zip from [Releases](https://github.com/Bandokii/FAHRPC/releases)
+2. Extract and replace your existing files (keep your `config.json` if customized)
+3. Run `setup.bat` again to update dependencies
 
 ## Uninstall
 
-To remove FAHRPC, simply **delete the FAHRPC folder**. This removes all application files and the virtual environment.
+To remove FAHRPC:
+1. **Delete the FAHRPC folder** - This removes all application files and the virtual environment
 
-Note: The **uv package manager will remain** on your system as a standalone tool. If you don't need uv for other projects, you can uninstall it separately by following the [official uv uninstallation instructions](https://docs.astral.sh/uv/getting-started/installation/#uninstallation).
+> **Note:** The uv package manager will remain on your system. If you don't need it, see the [uv uninstallation guide](https://docs.astral.sh/uv/getting-started/installation/#uninstallation).
+
+## Advanced Installation (Optional)
+
+For developers or advanced users who prefer command-line installation:
+
+### Global Command Installation
+
+After running `setup.bat`, you can install FAHRPC as a global command:
+
+```bash
+uv tool install .
+```
+
+Then run from anywhere with:
+```bash
+fahrpc
+```
+
+### Install from PyPI
+
+```bash
+pip install fahrpc
+# or
+uv tool install fahrpc
+```
 
 ## Dependencies
+
+All dependencies are automatically installed by `setup.bat`. For reference:
 
 ### Python Packages
 - **playwright** - Web scraping and browser automation
@@ -170,11 +188,6 @@ Note: The **uv package manager will remain** on your system as a standalone tool
 - **pyadl** - AMD GPU monitoring
 - **pystray** - System tray icon
 - **Pillow** - Image handling
-
-### External Software
-- **uv** - Ultra-fast Python package manager (installed by setup)
-- **Discord** - Discord client application
-- **Folding@Home** - FAH client with web interface
 
 ## Project Structure
 
@@ -216,20 +229,6 @@ Build distribution:
 uv build
 ```
 
-## Publishing
-
-To publish to PyPI:
-
-1. Update version in `pyproject.toml`
-2. Run `uv build`
-3. Run `uv publish`
-
-Users can then install with:
-```bash
-pip install fahrpc
-uv tool install fahrpc
-```
-
 ## License
 
 MIT License - See [license](license) file for details
@@ -249,8 +248,11 @@ MIT License - See [license](license) file for details
 
 ## FAQ
 
+**Q: Do I need Python installed?**  
+A: No! The setup script handles everything automatically, including Python.
+
 **Q: Does this work on Linux/macOS?**  
-A: Currently Windows-only due to system tray integration and GPU driver dependencies. Cross-platform support would require refactoring.
+A: Currently Windows-only due to system tray integration and GPU driver dependencies.
 
 **Q: Can I use custom GPU names?**  
 A: Yes! Edit the `hardware.nvidia.strip_prefix` and `hardware.amd.strip_prefix` values in config.json
@@ -261,8 +263,8 @@ A: No, FAHRPC only reads data. It has minimal CPU/memory overhead (~50MB RAM).
 **Q: Can I monitor remote FAH instances?**  
 A: Yes, update the `foldingathome.web_url` in config.json to point to another machine's IP:port
 
-**Q: Is my Discord client ID exposed?**  
-A: No, it's stored locally in config.json. The client ID is public by design.
+**Q: How do I update FAHRPC?**  
+A: Download the latest zip, extract over your existing folder, and run `setup.bat` again.
 
 ## Changelog
 
