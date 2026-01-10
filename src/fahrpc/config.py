@@ -100,8 +100,8 @@ DEFAULT_CONFIG = {
     },
     # Folding@Home connection settings
     "foldingathome": {
-        "username": "",  # Your FAH username for stats lookup (leave empty to disable)
         "web_url": "http://localhost:7396/",  # localhost = this PC; for remote use http://<ip>:7396/
+        "stats_url": "https://v8-5.foldingathome.org/stats",  # Global stats page
         "update_interval": 15  # Seconds between Discord/console updates
     },
     # Temperature display thresholds and colors

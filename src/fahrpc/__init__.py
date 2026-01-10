@@ -23,11 +23,11 @@ Usage:
 
 Author: Bandokii
 AI Collaborator: GitHub Copilot
-Version: 1.0.3
+Version: 1.0.2
 License: MIT
 """
 
-__version__ = "1.0.3"
+__version__ = "1.0.2"
 __author__ = "Bandokii"
 
 from .config import APP_AUTHOR, APP_NAME, get_config_dir, get_log_path, load_config

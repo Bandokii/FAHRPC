@@ -13,8 +13,8 @@
     ]
   },
   "foldingathome": {
-    "username": "YOUR_FAH_USERNAME",
     "web_url": "http://localhost:7396/",
+    "stats_url": "https://v8-5.foldingathome.org/stats",
     "update_interval": 15
   },
   "temperature": {
