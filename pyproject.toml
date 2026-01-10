@@ -1,6 +1,6 @@
 [project]
 name = "fahrpc"
-version = "1.0.0"
+version = "1.0.1"
 description = "Folding@Home Discord Rich Presence - Monitor GPU folding progress in Discord"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,6 +36,7 @@ dependencies = [
     "pystray>=0.19.4",
     "Pillow>=10.0.0",
     "pyadl>=0.1",
+    "platformdirs>=4.0.0",
 ]
 
 [project.urls]
@@ -53,7 +54,7 @@ dev = ["ruff>=0.1.0"]
 [tool.setuptools]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]

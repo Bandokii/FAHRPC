@@ -1,30 +1,72 @@
 """
-Hardware module for FAHRPC
-Handles GPU detection and monitoring (Nvidia/AMD)
+Hardware Module for FAHRPC
+=========================
+
+Handles GPU detection and real-time monitoring for both Nvidia and AMD graphics cards.
+
+Features:
+    - Automatic detection of all installed GPUs
+    - Real-time temperature monitoring
+    - GPU utilization percentage tracking
+    - Multi-GPU support (mixed Nvidia/AMD configurations)
+    - Graceful fallback when GPU libraries unavailable
+
+Supported Hardware:
+    - Nvidia GPUs via pynvml (NVML library)
+    - AMD GPUs via pyadl (ADL library)
+
+Example usage:
+    >>> from fahrpc.hardware import GPUMonitor
+    >>> monitor = GPUMonitor(config)
+    >>> print(f"Found {monitor.nvidia_count} Nvidia GPUs")
+    >>> for name, util, temp in monitor.get_nvidia_data():
+    ...     print(f"{name}: {util}% @ {temp}°C")
 """
 
 import logging
 import warnings
 from typing import Any, Dict, List, Tuple
 
-logger = logging.getLogger('FAHRPC')
+from fahrpc.config import APP_NAME
 
-# Silent Nvidia import
+logger = logging.getLogger(APP_NAME.upper())
+
+# ============================================================================
+# GPU Library Imports
+# ============================================================================
+# Nvidia: pynvml wraps NVIDIA Management Library (NVML) for GPU monitoring
+# AMD: pyadl wraps AMD Display Library (ADL) for Radeon GPUs
+# Both libraries may emit warnings during import, which we suppress
+
+# Import Nvidia NVML library (suppress FutureWarning from numpy/etc)
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import pynvml
 
-
-# AMD Support
+# Import AMD ADL library (optional - graceful fallback if not available)
 try:
     from pyadl import ADLManager
     AMD_SUPPORT = True
-except (ImportError, Exception):
+except (ImportError, Exception) as e:
+    # AMD support requires specific drivers and pyadl package
+    logger.debug(f"AMD GPU support not available: {e}")
     AMD_SUPPORT = False
 
 
+# ============================================================================
+# GPU Monitor Class
+# ============================================================================
+
 class GPUMonitor:
-    """Manages GPU detection and monitoring."""
+    """
+    Manages GPU detection and real-time monitoring.
+
+    Attributes:
+        config: Configuration dictionary
+        nvidia_handles: List of (handle, name) tuples for Nvidia GPUs
+        nvidia_names: List of cleaned Nvidia GPU names
+        amd_devices: List of AMD device objects from ADLManager
+    """
 
     def __init__(self, config: Dict[str, Any]) -> None:
         """
@@ -56,8 +98,8 @@ class GPUMonitor:
                     ).strip()
                     self.nvidia_handles.append((handle, clean_name))
                     self.nvidia_names.append(clean_name)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Nvidia GPU detection failed: {e}", exc_info=True)
 
         # AMD detection
         if self.config['hardware']['amd']['enabled'] and AMD_SUPPORT:
@@ -65,7 +107,8 @@ class GPUMonitor:
                 instance = ADLManager.getInstance()
                 if instance:
                     self.amd_devices = instance.getDevices()
-            except Exception:
+            except Exception as e:
+                logger.error(f"AMD GPU detection failed: {e}", exc_info=True)
                 self.amd_devices = []
 
     def get_nvidia_data(self) -> List[Tuple[str, int, int]]:
@@ -81,8 +124,8 @@ class GPUMonitor:
                 temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
                 util = pynvml.nvmlDeviceGetUtilizationRates(handle).gpu
                 data.append((name, util, temp))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to get Nvidia GPU data for {name}: {e}", exc_info=True)
         return data
 
     def get_amd_data(self) -> List[Tuple[str, int, Any]]:
@@ -104,8 +147,8 @@ class GPUMonitor:
                     if temp is None or temp <= 0:
                         temp = "N/A"
                     data.append((name, util, temp))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(f"Failed to get AMD GPU data: {e}", exc_info=True)
         return data
 
     def get_all_gpu_data(self) -> Tuple[List, List[int], List[int]]:
@@ -133,11 +176,12 @@ class GPUMonitor:
         return gpu_lines, utilizations, temperatures
 
     @property
-    def nvidia_count(self):
+    def nvidia_count(self) -> int:
         """Number of detected Nvidia GPUs."""
         return len(self.nvidia_names)
+
     @property
-    def amd_count(self):
+    def amd_count(self) -> int:
         """Number of detected AMD GPUs."""
         return len(self.amd_devices)
 
@@ -146,5 +190,5 @@ class GPUMonitor:
         """Clean up GPU monitoring resources."""
         try:
             pynvml.nvmlShutdown()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error during GPU monitor shutdown: {e}", exc_info=True)

@@ -7,7 +7,7 @@
         "url": "https://foldingathome.org/start-folding/"
       },
       {
-        "label": "Github",
+        "label": "GitHub",
         "url": "https://github.com/Bandokii/FAHRPC"
       }
     ]
@@ -31,7 +31,7 @@
   "display": {
     "start_hidden": true,
     "show_header": true,
-    "icon_file": "fahrpc.png"
+    "icon_file": "FAHRPC.png"
   },
   "hardware": {
     "nvidia": {

@@ -1,6 +1,26 @@
 """
-Scraper module for FAHRPC
-Handles web scraping of Folding@Home interfaces with caching support
+Scraper Module for FAHRPC
+========================
+
+Handles web scraping of Folding@Home web interfaces using Playwright.
+
+Features:
+    - Scrapes local FAH control interface for project progress
+    - Scrapes global FAH stats page for points and work units
+    - Smart caching with 5-minute TTL to reduce server load
+    - Headless Chromium browser for reliable rendering
+    - Regex-based data extraction for speed
+
+Data Sources:
+    - Local Control: http://localhost:7396/ (or remote IP)
+    - Global Stats:  https://v8-5.foldingathome.org/stats
+
+Example usage:
+    >>> from fahrpc.scraper import FAHScraper
+    >>> scraper = FAHScraper(config)
+    >>> await scraper.initialize()
+    >>> percents, projects, is_running = await scraper.get_control_data()
+    >>> points, wus = await scraper.get_global_stats()
 """
 
 import logging
@@ -10,16 +30,47 @@ from typing import Any, Dict, Optional, Tuple
 
 from playwright.async_api import async_playwright
 
-logger = logging.getLogger('FAHRPC')
+from fahrpc.config import APP_NAME
 
-# Pre-compiled regex patterns
+logger = logging.getLogger(APP_NAME.upper())
+
+# ============================================================================
+# Regex Patterns for FAH Page Parsing
+# ============================================================================
+# These patterns extract data from FAH web interface HTML
+# Pre-compiled for performance since they're used repeatedly
+
+# Matches: <div class="user-points">1,234,567 points earned</div>
 RE_POINTS = re.compile(r'<div class="user-points">([\d,]+) points earned</div>')
+
+# Matches: <div class="user-wus">123 WUs completed</div>
 RE_WUS = re.compile(r'<div class="user-wus">([\d,]+) WUs completed</div>')
-RE_PERCENT = re.compile(r"(\d+\.\d+|\d+)%")
+
+# Matches: 5-digit project IDs (e.g., 12345, 67890)
 RE_PROJ_ID = re.compile(r'\b\d{5}\b')
 
+
+# ============================================================================
+# FAH Scraper Class
+# ============================================================================
+
 class FAHScraper:
-    """Manages web scraping of Folding@Home data with caching."""
+    """
+    Manages web scraping of Folding@Home data with intelligent caching.
+
+    Uses Playwright's headless Chromium browser to render JavaScript-heavy
+    FAH web interfaces and extract data via regex patterns.
+
+    Attributes:
+        config: Configuration dictionary with URLs and settings
+        browser: Playwright browser instance
+        context: Browser context for page isolation
+        control_page: Page object for local FAH control interface
+        stats_page: Page object for global FAH stats
+        _stats_cache: Cached (points, wus) tuple
+        _cache_timestamp: Unix timestamp of last cache update
+        _cache_ttl: Cache time-to-live in seconds (default: 300)
+    """
 
     def __init__(self, config: Dict[str, Any]) -> None:
         """
@@ -57,6 +108,12 @@ class FAHScraper:
         """
         Scrape the local FAH control page.
 
+        Accesses the Folding@Home web interface on the LOCAL machine via localhost:7396.
+        This means it monitors the FAH client on the same PC that FAHRPC is running on.
+
+        To monitor a different PC, change 'foldingathome.web_url' in config.json to:
+            http://<other-pc-ip>:7396/
+
         Returns:
             Tuple of (percent_complete, project_id, is_running)
 
@@ -76,6 +133,7 @@ class FAHScraper:
             is_running = await self.control_page.locator(".state-run").count() > 0
             return percents, proj_ids, is_running
         except Exception as e:
+            logger.error(f"FAH control page error: {e}", exc_info=True)
             raise Exception(f"Control page error: {e}")
 
     async def get_global_stats(self) -> Tuple[Optional[str], Optional[str]]:
@@ -109,7 +167,7 @@ class FAHScraper:
 
             return result
         except Exception as e:
-            logger.debug(f"Stats scraping failed: {e}")
+            logger.error(f"FAH stats scraping failed: {e}", exc_info=True)
             return None, None
 
     async def close(self) -> None:

@@ -1,7 +1,5 @@
 include README.md
-include README.txt
-include license
+include LICENSE
 include config.json
-include fahrpc.png
-include quick_start.txt
-recursive-include src/fahrpc *.py
+include FAHRPC.png
+include FAHRPC.ico

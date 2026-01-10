@@ -10,6 +10,8 @@ INSTALLATION (One Time)
    - Installs all dependencies
    - Downloads Playwright browser
    - Creates run_fahrpc.bat launcher
+   - Creates desktop shortcut (FAHRPC.lnk)
+   - Verifies all dependencies are installed
    - Setup complete!
 
 
@@ -68,14 +70,14 @@ Option 3 (Multi-GPU):
   Project: GPUs: 2 │ x̄ 87% - x̄ 72°c
   Status: "hyper modern space heater"
 
-Status alternates between these displays every 30 seconds.
+Status alternates between these displays every update cycle (default: 15 seconds).
 
 
 TROUBLESHOOTING
 ───────────────
 
 FAHRPC won't start:
-  → Check fah_error_log.txt for error messages
+  → Check error log in AppData (see KEY FILES section)
   → Ensure Discord is running and logged in
   → Ensure Folding@Home is running
   → Check Windows Firewall isn't blocking
@@ -88,12 +90,12 @@ No Discord connection:
 No GPU stats:
   → Update your GPU drivers
   → Check config.json has nvidia/amd enabled
-  → See README.txt > TROUBLESHOOTING section
+  → See README.md > TROUBLESHOOTING section
 
 Setup failed:
   → Try running setup.bat as Administrator
   → Check internet connection
-  → See README.txt > TROUBLESHOOTING section
+  → See README.md > TROUBLESHOOTING section
 
 
 SYSTEM TRAY MENU
@@ -118,8 +120,7 @@ Make FAHRPC run at Windows startup:
 4. Name: FAHRPC
 5. Trigger: At startup
 6. Action: Start program
-7. Program: cmd.exe
-8. Arguments: /c "cd /d C:\path\to\FAHRPC && uv run python -m fahrpc.main"
+7. Program: C:\path\to\FAHRPC\run_fahrpc.bat
 
 Replace C:\path\to\FAHRPC with your actual path.
 
@@ -135,6 +136,9 @@ Simply delete the FAHRPC folder:
 
 CONFIGURATION
 ──────────────
+
+Config file location:
+  Windows: %LOCALAPPDATA%\Bandokii\fahrpc\config.json
 
 Edit config.json to customize:
   • Discord client ID
@@ -165,10 +169,10 @@ HELPFUL COMMANDS
 ────────────────
 
 View error log:
-  → Open fah_error_log.txt
+  → Open %LOCALAPPDATA%\Bandokii\fahrpc\fah_error_log.txt
 
 Edit configuration:
-  → Open config.json in notepad
+  → Open %LOCALAPPDATA%\Bandokii\fahrpc\config.json
 
 Reinstall dependencies:
   → Run setup.bat again
@@ -184,12 +188,16 @@ Install globally:
 KEY FILES
 ─────────
 
-README.txt               → Full documentation
-PROJECT_STRUCTURE.txt   → Technical overview
-REFACTORING_SUMMARY.md  → Implementation details
-config.json             → Configuration file
-fah_error_log.txt       → Error log (created on first run)
-pyproject.toml          → Project metadata
+In Project Folder:
+  README.md               → Full documentation
+  PROJECT_STRUCTURE.txt   → Technical overview
+  pyproject.toml          → Project metadata
+  setup.bat               → Installation script
+  run_fahrpc.bat          → Launcher
+
+In AppData (%LOCALAPPDATA%\Bandokii\fahrpc\):
+  config.json             → Configuration file
+  fah_error_log.txt       → Error log (created on first run)
 
 
 SUPPORT
@@ -197,7 +205,7 @@ SUPPORT
 
 For issues or questions:
   1. Check fah_error_log.txt for error details
-  2. See README.txt > TROUBLESHOOTING section
+  2. See README.md > TROUBLESHOOTING section
   3. Review config.json settings
   4. Check GitHub issues (if available)
 
@@ -230,8 +238,7 @@ WHAT'S NEW (Refactoring)
 • Global installation support
 • Cleaner imports and better organization
 • Same functionality, better structure!
-
-For technical details, see REFACTORING_SUMMARY.md
-
+• Cross-platform config paths (Windows/macOS/Linux)
+• Proper app data directory support
 
 Happy Folding at Home! 🏠

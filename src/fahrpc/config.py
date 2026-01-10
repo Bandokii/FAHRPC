@@ -1,55 +1,150 @@
 """
-Configuration module for FAHRPC
-Handles loading, validating, and managing config.json
+Configuration Module for FAHRPC
+==============================
+
+Handles all configuration management including:
+- Loading user configuration from platform-specific directories
+- Merging user settings with sensible defaults
+- Validating required configuration keys
+- Creating default config files for new users
+
+Configuration file locations (managed by platformdirs):
+    Windows: %LOCALAPPDATA%\\Bandokii\\fahrpc\\config.json
+    macOS:   ~/Library/Application Support/fahrpc/config.json
+    Linux:   ~/.config/fahrpc/config.json
+
+Example usage:
+    >>> from fahrpc.config import load_config, get_config_dir
+    >>> config = load_config()
+    >>> print(config['discord']['client_id'])
+    >>> print(get_config_dir())
 """
 
 import json
 import logging
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-logger = logging.getLogger('FAHRPC')
+import platformdirs
+
+# ============================================================================
+# Application Metadata
+# ============================================================================
+# These constants are used by platformdirs to determine config locations
+# and are exported for use by other modules (logging, tray, etc.)
+
+APP_NAME = "fahrpc"      # Application identifier (lowercase, no spaces)
+APP_AUTHOR = "Bandokii"  # Author/organization name for directory structure
+
+logger = logging.getLogger(APP_NAME.upper())
+
+
+# ============================================================================
+# Path Resolution Functions
+# ============================================================================
+
+def get_config_dir() -> Path:
+    """
+    Get the appropriate config directory for the current platform.
+
+    Uses platformdirs for cross-platform compatibility:
+    - Windows: %LOCALAPPDATA%\\Bandokii\\fahrpc
+    - macOS: ~/Library/Application Support/fahrpc
+    - Linux: ~/.config/fahrpc (XDG compliant)
+
+    Returns:
+        Path to the config directory (creates it if it doesn't exist)
+    """
+    config_dir = Path(platformdirs.user_config_dir(APP_NAME, APP_AUTHOR))
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return config_dir
+
+
+def get_config_path() -> Path:
+    """
+    Get the full path to the config.json file.
+
+    Returns:
+        Path to config.json in the appropriate config directory
+    """
+    return get_config_dir() / 'config.json'
+
+
+def get_log_path(filename: str = "fah_error_log.txt") -> Path:
+    """
+    Get the full path to a log file in the config directory.
+
+    Args:
+        filename: Name of the log file
+
+    Returns:
+        Path to the log file in the appropriate config directory
+    """
+    return get_config_dir() / filename
+
+
+# ============================================================================
+# Default Configuration
+# ============================================================================
+# This configuration is used when no config.json exists or as a base for
+# merging with user settings. All values here are sensible defaults.
+
 DEFAULT_CONFIG = {
+    # Discord Rich Presence settings
     "discord": {
-        "client_id": "1457701520673079501",
+        "client_id": "1457701520673079501",  # FAHRPC Discord Application ID
         "buttons": [
             {"label": "Start Folding", "url": "https://foldingathome.org/start-folding/"},
-            {"label": "Github", "url": "https://github.com/Bandokii/FAHRPC"}
+            {"label": "GitHub", "url": "https://github.com/Bandokii/FAHRPC"}
         ]
     },
+    # Folding@Home connection settings
     "foldingathome": {
-        "web_url": "http://localhost:7396/",
-        "stats_url": "https://v8-5.foldingathome.org/stats",
-        "update_interval": 15
+        "web_url": "http://localhost:7396/",  # localhost = this PC; for remote use http://<ip>:7396/
+        "stats_url": "https://v8-5.foldingathome.org/stats",  # Global stats page
+        "update_interval": 15  # Seconds between Discord/console updates
     },
+    # Temperature display thresholds and colors
     "temperature": {
-        "thresholds": {"low": 65, "medium": 75},
-        "colors": {"low": "green", "medium": "orange", "high": "red"}
+        "thresholds": {"low": 65, "medium": 75},  # °C thresholds
+        "colors": {"low": "green", "medium": "orange", "high": "red"}  # ANSI colors
     },
+    # Display and UI settings
     "display": {
-        "start_hidden": True,
-        "show_header": True,
-        "icon_file": "fahrpc.png"
+        "start_hidden": True,   # Hide console on startup (tray only)
+        "show_header": True,    # Show ASCII art header
+        "icon_file": "FAHRPC.png"  # Tray icon filename
     },
+    # GPU monitoring settings
     "hardware": {
         "nvidia": {"enabled": True, "strip_prefix": "NVIDIA GeForce "},
         "amd": {"enabled": True, "strip_prefix": "AMD Radeon "}
     },
+    # Logging settings
     "logging": {
-        "error_log_file": "fah_error_log.txt",
-        "suppress_asyncio_warnings": True
+        "error_log_file": "fah_error_log.txt",  # Log filename in config dir
+        "suppress_asyncio_warnings": True  # Filter noisy async warnings
     }
 }
+
+
+# ============================================================================
+# Configuration Helper Functions
+# ============================================================================
 
 def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively merge two dictionaries.
 
+    User config values override defaults, but missing keys fall back to defaults.
+    Nested dictionaries are merged recursively rather than replaced wholesale.
+
     Args:
-        base: Base dictionary (lower priority)
-        override: Override dictionary (higher priority)
+        base: Base dictionary (lower priority - defaults)
+        override: Override dictionary (higher priority - user config)
 
     Returns:
-        Merged dictionary
+        Merged dictionary with all keys from both inputs
     """
     result = base.copy()
     for key, value in override.items():
@@ -59,7 +154,7 @@ def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
             result[key] = value
     return result
 
-def validate_config(config: Dict[str, Any]) -> tuple[bool, list[str]]:
+def validate_config(config: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate required config keys are present.
 
@@ -88,14 +183,14 @@ def validate_config(config: Dict[str, Any]) -> tuple[bool, list[str]]:
 
     return len(errors) == 0, errors
 
-def load_config(config_path: str = "config.json") -> Dict[str, Any]:
+def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """
     Load configuration from JSON file with fallback to defaults.
 
     Creates default config file if it doesn't exist and validates on load.
 
     Args:
-        config_path: Path to config.json file
+        config_path: Path to config.json file (uses default location if None)
 
     Returns:
         Merged configuration dictionary
@@ -103,25 +198,49 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
     Raises:
         SystemExit: If config validation fails
     """
+    # Use platform-appropriate config path if not specified
+    if config_path is None:
+        config_path = str(get_config_path())
+
+    logger.debug(f"[CONFIG] Loading configuration from: {config_path}")
+
     try:
         with open(config_path, 'r') as f:
+            logger.debug("[CONFIG] Config file found, parsing JSON")
             user_config = json.load(f)
+            logger.debug(f"[CONFIG] User config keys: {list(user_config.keys())}")
             merged = merge_dicts(DEFAULT_CONFIG, user_config)
+            logger.debug("[CONFIG] Configuration merged successfully")
 
             # Validate configuration
             is_valid, errors = validate_config(merged)
             if not is_valid:
+                logger.error(f"[CONFIG] Configuration validation failed: {errors}")
                 for error in errors:
                     print(f"[CONFIG ERROR] {error}")
                 raise SystemExit(1)
 
+            logger.info("[CONFIG] Configuration loaded and validated successfully")
+            logger.debug(f"[CONFIG] Foldingathome endpoint: {merged['foldingathome']['web_url']}")
+            logger.debug(f"[CONFIG] Discord client ID: {merged['discord']['client_id']}")
+            logger.debug(f"[CONFIG] Update interval: {merged['foldingathome']['update_interval']}s")
+            logger.debug(f"[CONFIG] Nvidia enabled: {merged['hardware']['nvidia']['enabled']}")
+            logger.debug(f"[CONFIG] AMD enabled: {merged['hardware']['amd']['enabled']}")
             return merged
     except FileNotFoundError:
-        print(f"Config file '{config_path}' not found. Creating default config...")
+        logger.info(f"[CONFIG] Config file not found at {config_path}")
+        logger.info("[CONFIG] Creating default configuration")
+        print(f"Config file not found. Creating default config at: {config_path}")
+        # Ensure parent directory exists
+        Path(config_path).parent.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"[CONFIG] Created config directory: {Path(config_path).parent}")
         with open(config_path, 'w') as f:
             json.dump(DEFAULT_CONFIG, f, indent=2)
+            logger.info("[CONFIG] Default configuration file written")
         return DEFAULT_CONFIG
     except json.JSONDecodeError as e:
+        logger.error(f"[CONFIG] JSON parsing error: {e}", exc_info=True)
         print(f"Error parsing config file: {e}")
         print("Using default configuration.")
+        logger.info("[CONFIG] Falling back to default configuration")
         return DEFAULT_CONFIG

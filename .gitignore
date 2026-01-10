@@ -35,6 +35,7 @@ Thumbs.db
 setup_log.txt
 setup_error_log.txt
 fah_error_log.txt
+%LOGFILE%
 
 # Caches
 .ruff_cache/

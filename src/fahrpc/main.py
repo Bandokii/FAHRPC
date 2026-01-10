@@ -1,12 +1,32 @@
 """
-FAHRPC - Folding@Home Discord Rich Presence
--------------------------------------------
-Original Author: Bandokii
-AI Collaborator: VSCode Copilot
-Refactored for Efficiency & Multi-GPU Support
+FAHRPC Main Module - Application Entry Point
+============================================
 
-Main entry point for modular FAHRPC with improved error handling,
-caching, graceful shutdown, and retry logic.
+Original Author: Bandokii
+AI Collaborator: GitHub Copilot
+Version: 1.0.1 (January 2026)
+
+This is the main entry point for FAHRPC. It orchestrates all components:
+- Initializes logging, configuration, and hardware monitoring
+- Manages the main async event loop
+- Handles Discord RPC updates and FAH data scraping
+- Coordinates system tray icon and console visibility
+- Implements graceful shutdown with signal handling
+
+Application Flow:
+    1. main() - Entry point, sets up logging and tray icon
+    2. main_loop() - Manages restart/stop events
+    3. main_logic() - Core monitoring loop (async)
+
+Console Output:
+    - Color-coded status messages (ANSI)
+    - ASCII art header with app branding
+    - Real-time GPU stats and project progress
+    - Timestamp prefixes on all output
+
+Command Line:
+    $ fahrpc                   # If installed globally
+    $ python -m fahrpc.main    # Direct execution
 """
 
 import asyncio
@@ -17,26 +37,39 @@ import signal
 import sys
 import threading
 import time
-from typing import Optional
+from typing import Any, Optional
 
 from fahrpc import (
     DiscordRPC,
     FAHScraper,
     GPUMonitor,
     TrayIcon,
+    get_log_path,
     load_config,
     set_console_visibility,
     setup_error_logging,
 )
 
-# Global control flags
-restart_event = threading.Event()
-stop_event = threading.Event()
+# ============================================================================
+# Global State
+# ============================================================================
+# Threading events for coordinating shutdown and restart between
+# the main async loop and the system tray icon thread
 
-# Logger
+restart_event = threading.Event()  # Set by tray menu to trigger restart
+stop_event = threading.Event()     # Set by tray menu or signal to trigger shutdown
+
+# Logger instance (initialized in main())
 logger: Optional[logging.Logger] = None
 
-# ANSI Color Codes
+# ============================================================================
+# Console Formatting Constants
+# ============================================================================
+
+# Padding for aligned console output (matches timestamp width)
+HARDWARE_PADDING = " " * 13
+
+# ANSI escape codes for colored terminal output
 COLORS = {
     "white": "\033[97m",
     "gray": "\033[90m",
@@ -45,23 +78,30 @@ COLORS = {
     "reset": "\033[0m",
     "green": "\033[92m",
     "yellow": "\033[93m",
-    "orange": "\033[38;5;208m",
+    "orange": "\033[38;5;208m",  # 256-color orange
 }
 
+# Regex to strip ANSI codes for length calculations
 RE_ANSI = re.compile(r'\033\[[0-9;]*m')
+
+
+# ============================================================================
+# Utility Functions
+# ============================================================================
 
 def get_timestamp() -> str:
     """
-    Returns a formatted white timestamp string.
+    Returns a formatted white timestamp string for console output.
 
     Returns:
-        Formatted timestamp with ANSI colors
+        Formatted timestamp like "[HH:MM:SS]" with ANSI colors
     """
     return f"{COLORS['white']}[{time.strftime('%H:%M:%S')}]{COLORS['reset']}"
 
+
 def strip_ansi(text: str) -> str:
     """
-    Removes ANSI codes to calculate visible string length.
+    Removes ANSI escape codes to calculate visible string length.
 
     Args:
         text: String containing ANSI codes
@@ -71,7 +111,7 @@ def strip_ansi(text: str) -> str:
     """
     return RE_ANSI.sub('', text)
 
-def get_temp_color(temp: any, config: dict) -> str:
+def get_temp_color(temp: Any, config: dict) -> str:
     """
     Returns the ANSI color code based on temperature thresholds.
 
@@ -88,29 +128,37 @@ def get_temp_color(temp: any, config: dict) -> str:
     thresholds = config['temperature']['thresholds']
     color_names = config['temperature']['colors']
 
+    # Return color based on temperature thresholds from config
     if temp < thresholds['low']:
-        return COLORS[color_names['low']]
+        return COLORS[color_names['low']]      # Green: cool
     elif temp < thresholds['medium']:
-        return COLORS[color_names['medium']]
+        return COLORS[color_names['medium']]   # Orange: warm
     else:
-        return COLORS[color_names['high']]
+        return COLORS[color_names['high']]     # Red: hot
+
+
+# ============================================================================
+# Console Output Functions
+# ============================================================================
 
 def print_header(config: dict) -> None:
     """
-    Prints ASCII logo header.
+    Prints the ASCII art FAHRPC logo header to console.
 
     Args:
-        config: Configuration dictionary
+        config: Configuration dictionary (checks display.show_header)
     """
     if not config['display']['show_header']:
         return
 
+    # Color assignments for the two-tone FAH | RPC effect
     RED = COLORS['red']
     BLUE = COLORS['blue']
     GRAY = COLORS['gray']
     RESET = COLORS['reset']
     WHITE = COLORS['white']
 
+    # ASCII art - "FAH" in red, "RPC" in blue
     lines = [
         rf"     {RED}______  ___   _   _{BLUE}  ______ ______  _____          ",
         rf"     {RED}|  ___|/ _ \ | | | |{BLUE} | ___ \| ___ \/  __ \         ",
@@ -120,7 +168,7 @@ def print_header(config: dict) -> None:
         rf"     {RED}\_|   \_| |_/\_| |_/{BLUE} \_| \_|\_|     \____/         ",
     ]
 
-    signature = f"               {GRAY}By Bandokii & VSCode Copilot{RESET}"
+    signature = f"               {GRAY}By Bandokii & GitHub Copilot{RESET}"
     hz = "═"
     divider = f"           {BLUE}{hz * 14}{WHITE}{hz}{RED}{hz * 14}{RESET}"
 
@@ -128,79 +176,104 @@ def print_header(config: dict) -> None:
     print(signature)
     print(f"{divider}\n")
 
-async def retry_with_backoff(coro, max_retries: int = 3, initial_delay: float = 1.0) -> Optional[any]:
-    """
-    Execute a coroutine with exponential backoff retry logic.
 
-    Args:
-        coro: Coroutine to execute
-        max_retries: Maximum number of retry attempts
-        initial_delay: Initial delay in seconds between retries
-
-    Returns:
-        Result of the coroutine or None if all retries fail
-    """
-    delay = initial_delay
-    for attempt in range(max_retries):
-        try:
-            return await coro
-        except Exception as e:
-            if attempt == max_retries - 1:
-                logger.warning(f"All retry attempts exhausted: {e}")
-                return None
-            logger.debug(f"Retry attempt {attempt + 1}/{max_retries} after {delay}s delay: {e}")
-            await asyncio.sleep(delay)
-            delay *= 2  # Exponential backoff
+# ============================================================================
+# Main Application Logic
+# ============================================================================
 
 async def main_logic() -> None:
-    """Main application logic."""
+    """
+    Core application logic running in the async event loop.
+
+    This function handles:
+    - Hardware initialization and detection
+    - FAH web scraper setup
+    - Discord RPC connection
+    - Main monitoring loop with periodic updates
+    - Graceful shutdown and cleanup
+    """
     global logger
 
-    # Enable ANSI colors on Windows
+    # Enable ANSI colors on Windows (required for colored output)
     if sys.platform == "win32":
         os.system('color')
 
-    # Load configuration
+    # ========================================================================
+    # Startup Logging
+    # ========================================================================
+    logger.info("=" * 80)
+    logger.info("FAHRPC Application Starting")
+    logger.info("=" * 80)
+    logger.info(f"Platform: {sys.platform}")
+    logger.info(f"Python: {sys.version}")
+    logger.info(f"Executable: {sys.executable}")
+
     config = load_config()
+    logger.info(f"Configuration loaded from: {get_log_path().parent}")
+    logger.debug(f"Config keys: {list(config.keys())}")
 
     # Print header
     print_header(config)
     print(f" {get_timestamp()} {COLORS['white']}[*] Initializing Hardware Monitor...{COLORS['reset']}")
+    logger.info("[STARTUP] Initializing Hardware Monitor")
 
     # Initialize hardware monitor
-    gpu_monitor = GPUMonitor(config)
-    hardware_padding = " " * 13
+    try:
+        gpu_monitor = GPUMonitor(config)
+        logger.info("[STARTUP] GPUMonitor initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize GPUMonitor: {e}", exc_info=True)
+        print(f" {get_timestamp()} {COLORS['red']}[!] GPU Monitor Error: {e}{COLORS['reset']}")
+        return
 
     # Display detected hardware
     ts = get_timestamp()
     if gpu_monitor.nvidia_count == 0:
         print(f" {ts} {COLORS['red']}[-] Found Nvidia GPU: 0{COLORS['reset']}")
+        logger.info("[STARTUP] Nvidia GPU count: 0")
     else:
         print(f" {ts} {COLORS['green']}[+] Found Nvidia GPU: {gpu_monitor.nvidia_count}{COLORS['reset']}")
+        logger.info(f"[STARTUP] Found {gpu_monitor.nvidia_count} Nvidia GPU(s)")
         for name in gpu_monitor.nvidia_names:
-            print(f"{hardware_padding}└─ {name}")
+            print(f"{HARDWARE_PADDING}└─ {name}")
+            logger.debug(f"[STARTUP] Nvidia GPU: {name}")
 
     if gpu_monitor.amd_count == 0:
         print(f" {ts} {COLORS['red']}[-] Found AMD GPU: 0{COLORS['reset']}")
+        logger.info("[STARTUP] AMD GPU count: 0")
     else:
         print(f" {ts} {COLORS['green']}[+] Found AMD GPU: {gpu_monitor.amd_count}{COLORS['reset']}")
+        logger.info(f"[STARTUP] Found {gpu_monitor.amd_count} AMD GPU(s)")
         for dev in gpu_monitor.amd_devices:
             clean_name = dev.adapterName.replace(config['hardware']['amd']['strip_prefix'], "").strip()
-            print(f"{hardware_padding}└─ {clean_name}")
+            print(f"{HARDWARE_PADDING}└─ {clean_name}")
+            logger.debug(f"[STARTUP] AMD GPU: {clean_name}")
 
     # Initialize scraper
     print(f" {get_timestamp()} {COLORS['white']}[*] Launching Web Scraper engine...{COLORS['reset']}")
+    logger.info("[STARTUP] Initializing FAH web scraper")
     scraper = FAHScraper(config)
+    logger.debug("[STARTUP] FAHScraper instance created")
+    logger.debug(f"[STARTUP] FAH control URL: {config['foldingathome']['web_url']}")
+    logger.debug(f"[STARTUP] FAH stats URL: {config['foldingathome']['stats_url']}")
+
     try:
+        logger.info("[STARTUP] Playwright browser initialization starting...")
         await scraper.initialize()
+        logger.info("[STARTUP] Playwright browser initialized successfully")
         print(f" {get_timestamp()} {COLORS['green']}[OK] Scraper engine ready.{COLORS['reset']}")
     except Exception as e:
+        if logger:
+            logger.error(f"[STARTUP] Browser initialization failed: {e}", exc_info=True)
         print(f" {get_timestamp()} {COLORS['red']}[!] Browser Error: {e}{COLORS['reset']}")
+        logger.critical("[STARTUP] Cannot continue without web scraper. Shutting down.")
         return
 
     # Initialize Discord RPC
     print(f" {get_timestamp()} {COLORS['white']}[*] Attempting Discord connection...{COLORS['reset']}")
+    logger.info("[STARTUP] Initializing Discord RPC client")
     discord = DiscordRPC(config)
+    logger.debug(f"[STARTUP] Discord RPC config: CLIENT_ID={config['discord']['client_id']}")
 
     # State variables
     global_points, global_wus = "Synchronizing...", "Synchronizing..."
@@ -217,20 +290,26 @@ async def main_logic() -> None:
 
     update_interval = config['foldingathome']['update_interval']
 
+    logger.info(f"[STARTUP] Initialization complete. Update interval: {update_interval}s")
+    logger.info("[STARTUP] Starting main monitoring loop...")
+    logger.info("=" * 80)
+
     try:
         while not restart_event.is_set() and not stop_event.is_set():
             # Connect to Discord if not connected with retry logic
             if not discord.connected:
                 if await discord.connect():
                     if not last_discord_status:
+                        logger.info("[MAIN LOOP] Discord connection established")
                         print(f" {get_timestamp()} {COLORS['green']}[OK] Discord connection stable.{COLORS['reset']}")
                         last_discord_status = True
                     force_stats_sync = True
                     discord_lost_logged = False
                 else:
                     if not discord_lost_logged:
+                        logger.warning("[MAIN LOOP] Discord connection unavailable")
                         print(f" {get_timestamp()} {COLORS['red']}[!] Discord not found.{COLORS['reset']}")
-                        print(f"{hardware_padding}└─ Retrying...{COLORS['reset']}")
+                        print(f"{HARDWARE_PADDING}└─ Retrying...{COLORS['reset']}")
                         discord_lost_logged = True
                         last_discord_status = False
                     await asyncio.sleep(update_interval)
@@ -243,8 +322,10 @@ async def main_logic() -> None:
                     last_fah_status = True
                 except Exception as e:
                     if not fah_lost_logged:
-                        print(f" {get_timestamp()} {COLORS['red']}[!] FAH connection lost: {str(e)[:50]}...{COLORS['reset']}")
-                        print(f"{hardware_padding}└─ Retrying connection...{COLORS['reset']}")
+                        logger.error(f"FAH connection lost: {e}", exc_info=True)
+                        err_msg = f"[!] FAH connection lost: {str(e)[:50]}..."
+                        print(f" {get_timestamp()} {COLORS['red']}{err_msg}{COLORS['reset']}")
+                        print(f"{HARDWARE_PADDING}└─ Retrying connection...{COLORS['reset']}")
                         fah_lost_logged = True
                         last_fah_status = False
                     await asyncio.sleep(update_interval)
@@ -266,7 +347,6 @@ async def main_logic() -> None:
 
                 if is_running:
                     # Check if we need to sync stats
-                    time.time()
                     # Use first project for sync logic (legacy behavior)
                     percent_float = 0.0
                     proj_id = proj_ids[0] if proj_ids else "Active"
@@ -297,7 +377,10 @@ async def main_logic() -> None:
                             # Mark 50% sync as done if triggered by 50%
                             if percent_float >= 50.0:
                                 fifty_percent_synced = True
-                            print(f" {get_timestamp()} {COLORS['green']}[OK] StatSync: {COLORS['white']}{global_points} pts │ {global_wus} WUs{COLORS['reset']}")
+                            stats_msg = f"{global_points} pts │ {global_wus} WUs"
+                            white = COLORS['white']
+                            reset = COLORS['reset']
+                            print(f" {get_timestamp()} {COLORS['green']}[OK] StatSync: {white}{stats_msg}{reset}")
                         else:
                             sync_status = 'idle'
 
@@ -306,7 +389,7 @@ async def main_logic() -> None:
                         gpu_data, utilizations, temperatures = gpu_monitor.get_all_gpu_data()
                     except Exception as e:
                         if logger:
-                            logger.error(f"GPU data retrieval failed: {e}")
+                            logger.error(f"GPU data retrieval failed: {e}", exc_info=True)
                         gpu_data, utilizations, temperatures = [], [], []
 
                     # Format GPU lines for console
@@ -353,7 +436,12 @@ async def main_logic() -> None:
                         indent = ' ' * 21
                         detail_texts = []
                         for idx, (pid, pct) in enumerate(zip(proj_ids, percents)):
-                            detail_texts.append(f"{indent if idx > 0 else ''}{COLORS['white']}Project{COLORS['reset']} │ {pid} - {COLORS['yellow']}{pct}%{COLORS['reset']}")
+                            prefix = indent if idx > 0 else ''
+                            white = COLORS['white']
+                            yellow = COLORS['yellow']
+                            reset = COLORS['reset']
+                            proj_line = f"{white}Project{reset} │ {pid} - {yellow}{pct}%{reset}"
+                            detail_texts.append(f"{prefix}{proj_line}")
                         console_line_final = "\n".join(detail_texts)
                     else:
                         console_line_final = console_output
@@ -395,11 +483,12 @@ async def main_logic() -> None:
                         else:
                             if not discord_lost_logged:
                                 print(f" {get_timestamp()} {COLORS['red']}[!] Discord not found.{COLORS['reset']}")
-                                print(f"{hardware_padding}└─ Retrying every {update_interval} seconds...{COLORS['reset']}")
+                                retry_msg = f"└─ Retrying every {update_interval} seconds..."
+                                print(f"{HARDWARE_PADDING}{retry_msg}{COLORS['reset']}")
                                 discord_lost_logged = True
                     except Exception as e:
                         if logger:
-                            logger.debug(f"Discord RPC update failed: {e}")
+                            logger.error(f"Discord RPC update failed: {e}", exc_info=True)
                         if not discord_lost_logged:
                             discord_lost_logged = True
                 else:
@@ -408,11 +497,11 @@ async def main_logic() -> None:
                         await discord.clear()
                     except Exception as e:
                         if logger:
-                            logger.debug(f"Discord RPC clear failed: {e}")
+                            logger.error(f"Discord RPC clear failed: {e}", exc_info=True)
 
             except Exception as e:
                 if logger:
-                    logger.error(f"Main loop iteration error: {e}")
+                    logger.error(f"Main loop iteration error: {e}", exc_info=True)
                 await asyncio.sleep(update_interval)
                 continue
 
@@ -427,16 +516,20 @@ async def main_logic() -> None:
             print(f" {get_timestamp()} {COLORS['green']}[OK] Discord connection closed.{COLORS['reset']}")
         except Exception as e:
             if logger:
-                logger.error(f"Error closing Discord connection: {e}")
+                logger.error(f"[SHUTDOWN] Error closing Discord connection: {e}", exc_info=True)
 
         try:
             await scraper.close()
+            logger.info("[SHUTDOWN] Web scraper closed")
             print(f" {get_timestamp()} {COLORS['green']}[OK] Scraper engine closed.{COLORS['reset']}")
         except Exception as e:
             if logger:
-                logger.error(f"Error closing scraper: {e}")
+                logger.error(f"[SHUTDOWN] Error closing scraper: {e}", exc_info=True)
 
         await asyncio.sleep(0.5)
+        if logger:
+            logger.info("[SHUTDOWN] Shutdown complete")
+            logger.info("=" * 80)
         print(f" {get_timestamp()} {COLORS['green']}[OK] Shutdown complete.{COLORS['reset']}")
 
 async def main_loop() -> None:
@@ -469,16 +562,21 @@ def main() -> None:
     # Load config
     config = load_config()
 
-    # Setup error logging
+    # Setup error logging (use proper app data directory)
     global logger
+    log_file = str(get_log_path(config['logging']['error_log_file']))
     logger = setup_error_logging(
-        config['logging']['error_log_file'],
+        log_file,
         config['logging']['suppress_asyncio_warnings']
     )
+    logger.info("=" * 80)
+    logger.info("FAHRPC Application Entry Point")
+    logger.info("=" * 80)
 
     # Define graceful shutdown handler
     def signal_handler(signum: int, frame) -> None:
         """Handle shutdown signals (SIGTERM, SIGINT)."""
+        logger.warning(f"[SIGNAL] Received signal {signum}, initiating graceful shutdown")
         print(f"\n\n {get_timestamp()} {COLORS['yellow']}[*] Received shutdown signal ({signum})...{COLORS['reset']}")
         stop_event.set()
 
@@ -489,24 +587,39 @@ def main() -> None:
 
     # Set console visibility
     set_console_visibility(not config['display']['start_hidden'])
+    logger.info(f"[MAIN] Console visible: {not config['display']['start_hidden']}")
 
     # Start tray icon
-    tray = TrayIcon(config, restart_event, stop_event)
-    tray.start()
+    try:
+        logger.info("[MAIN] Starting system tray icon")
+        tray = TrayIcon(config, restart_event, stop_event)
+        tray.start()
+        logger.info("[MAIN] System tray icon started")
+    except Exception as e:
+        logger.error(f"[MAIN] Failed to start tray icon: {e}", exc_info=True)
+        print(f" {get_timestamp()} {COLORS['red']}[!] Tray Error: {e}{COLORS['reset']}")
 
     # Run main loop
     try:
+        logger.info("[MAIN] Starting main event loop")
         asyncio.run(main_loop())
     except KeyboardInterrupt:
+        logger.warning("[MAIN] Keyboard interrupt received")
         set_console_visibility(True)
         print(f"\n\n {get_timestamp()} {COLORS['yellow']}[*] Received keyboard interrupt...{COLORS['reset']}")
         stop_event.set()
     except Exception as e:
+        logger.error(f"[MAIN] Unhandled exception in main loop: {e}", exc_info=True)
         set_console_visibility(True)
         print(f"\n {get_timestamp()} {COLORS['red']}[FATAL ERROR]: {e}{COLORS['reset']}")
         input("Press Enter to close...")
     finally:
-        GPUMonitor.shutdown()
+        logger.info("[MAIN] Shutting down GPU monitor")
+        try:
+            GPUMonitor.shutdown()
+        except Exception as e:
+            logger.error(f"[MAIN] Error during GPU monitor shutdown: {e}", exc_info=True)
+        logger.info("[MAIN] Application exited")
 
 if __name__ == "__main__":
     main()

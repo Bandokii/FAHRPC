@@ -15,25 +15,46 @@ FAHRPC/
 │
 ├── pyproject.toml                # Project metadata & dependencies (PEP 621)
 ├── manifest.in                   # Package distribution manifest
-├── README.md                      # Full documentation (281 lines)
-├── README.txt                     # Quick reference guide
-├── quick_start.txt               # Setup instructions
+├── README.md                      # Full documentation
+├── quick_start.txt               # Setup & reference guide
 │
 ├── setup.bat                      # Automated installation script
-├── run_fahrpc.bat                # Application launcher
+├── run_fahrpc.bat                # Application launcher (created by setup.bat)
 │
-├── config.json                    # User configuration file
-├── fahrpc.ico                    # Windows icon file
-├── fahrpc.png                    # Logo/image asset
-├── license                        # MIT License text
+├── FAHRPC.ico                    # Windows icon file (used as fallback)
+├── FAHRPC.png                    # Logo/image asset (primary)
+├── LICENSE                        # MIT License text
+│
+├── logdocumentation/              # Logging system documentation
+│   ├── LOGGING_START_HERE.md     # Quick reference for logging
+│   ├── LOGGING_SYSTEM_OVERVIEW.md # Architecture overview
+│   ├── LOGGING_COMPLETE_REFERENCE.md # Full API reference
+│   ├── LOGGING_QUICK_COMMANDS.md  # Useful logging commands
+│   └── LOGGING_CONSOLIDATION_NOTES.md # How docs were consolidated
+│
+├── photos/                        # Screenshot gallery
+│   ├── logwindow.png             # Console window screenshot
+│   ├── rpccycle1.png             # Discord RPC display
+│   ├── rpccycle2.png             # Discord RPC alternate
+│   └── trayfunctions.png         # System tray menu
 │
 ├── .gitignore                     # Git ignore rules
 ├── .github/                       # GitHub configuration
 │   └── (workflows, templates, etc.)
 │
 └── dist/                          # Build output (generated)
-    ├── fahrpc-1.0.0-py3-none-any.whl    # Wheel distribution
-    └── fahrpc-1.0.0.tar.gz              # Source distribution
+    ├── fahrpc-1.0.1-py3-none-any.whl    # Wheel distribution
+    └── fahrpc-1.0.1.tar.gz              # Source distribution
+
+
+USER DATA DIRECTORY
+===================
+
+Location: %LOCALAPPDATA%\Bandokii\fahrpc\
+  - config.json           # User configuration
+  - fah_error_log.txt     # Application log file
+
+Created automatically on first run.
 
 
 MODULE DESCRIPTIONS
@@ -41,21 +62,25 @@ MODULE DESCRIPTIONS
 
 src/fahrpc/__init__.py
   - Exports public API
-  - Version info & package metadata
+  - Package version (__version__ = "1.0.1")
+  - Author metadata (__author__ = "Bandokii")
   - Imports key classes: DiscordRPC, GPUMonitor, FAHScraper, TrayIcon, etc.
 
-src/fahrpc/main.py (513 lines)
+src/fahrpc/main.py (~600 lines)
   - Application entry point
-  - Main event loop & control flow
+  - Main async event loop & control flow
   - Signal handling & graceful shutdown
   - Restart & error recovery logic
   - Discord status update coordination
+  - Color-coded console output with ANSI
 
 src/fahrpc/config.py
-  - Loads & parses config.json
+  - Loads & parses config.json from AppData directory
+  - Cross-platform config paths via platformdirs
   - Provides configuration interface
-  - Settings validation
+  - Settings validation with helpful errors
   - Default configuration fallback
+  - Deep merge of user settings with defaults
 
 src/fahrpc/hardware.py
   - NVIDIA GPU monitoring (nvidia-ml-py)
@@ -70,16 +95,21 @@ src/fahrpc/discord_rpc.py
   - Automatic retry logic
 
 src/fahrpc/scraper.py
-  - Web scraping engine (playwright)
-  - FAH web interface parsing
-  - Stats extraction (points, WUs, progress)
+  - Web scraping engine (Playwright/Chromium)
+  - FAH web interface parsing (localhost:7396)
+  - Global stats extraction (points, WUs)
+  - Smart caching with 5-minute TTL
+  - Pre-compiled regex patterns for speed
   - Error handling & timeouts
 
 src/fahrpc/logger.py
-  - Error logging to file
-  - Log rotation & management
-  - Error categorization
-  - User-friendly error messages
+  - Timestamped logging to file
+  - Module context in log entries (module.function():line)
+  - Full stack traces for exceptions
+  - Rotating file handler (10MB, 5 backups)
+  - Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  - Asyncio warning suppression (configurable)
+  - stderr redirection with timestamps
 
 src/fahrpc/tray.py
   - System tray integration (pystray)
@@ -96,16 +126,16 @@ src/fahrpc/py.typed
 ROOT FILES
 ==========
 
-pyproject.toml (71 lines)
+pyproject.toml
   - Package name: fahrpc
-  - Version: 1.0.0
+  - Version: 1.0.1
   - Python requirement: >=3.10
-  - 6 core dependencies
+  - 7 core dependencies
   - Console script entry point: fahrpc
   - Build backend: setuptools
   - Tool configs: ruff, uv
 
-README.md (281 lines)
+README.md
   - Feature overview
   - Installation guide
   - Usage instructions
@@ -113,6 +143,13 @@ README.md (281 lines)
   - Troubleshooting section
   - Development info
   - FAQ & changelog
+
+quick_start.txt
+  - Quick reference guide
+  - Installation steps
+  - Running FAHRPC
+  - Troubleshooting
+  - Tips & tricks
 
 setup.bat
   - Automated setup script
@@ -127,24 +164,26 @@ run_fahrpc.bat
   - Uses uv to run python -m fahrpc.main
   - Created by setup.bat
 
-config.json
-  - Discord client ID
-  - FAH web interface URL
-  - Temperature thresholds
-  - GPU monitoring settings
+config.json (in AppData)
+  - Discord client ID & button URLs
+  - FAH web interface URL (localhost or remote)
+  - Temperature thresholds & color settings
+  - GPU monitoring settings (enable/disable)
   - Update interval (default: 15 seconds)
+  - Display options (hidden start, header)
+  - Logging settings
 
 
 BUILD & DISTRIBUTION
 ====================
 
-dist/fahrpc-1.0.0-py3-none-any.whl (19.6 KB)
+dist/fahrpc-1.0.1-py3-none-any.whl (20.1 KB)
   - Universal wheel (pure Python, py3)
   - All modules included
   - Entry points configured
   - License included in dist-info/
 
-dist/fahrpc-1.0.0.tar.gz (55.9 KB)
+dist/fahrpc-1.0.1.tar.gz (56.2 KB)
   - Source distribution
   - Full source code
   - Metadata files
@@ -161,6 +200,7 @@ Runtime:
   - pystray >=0.19.4       (system tray integration)
   - Pillow >=10.0.0        (image handling)
   - pyadl >=0.1            (AMD GPU monitoring)
+  - platformdirs >=4.0.0   (cross-platform app data directories)
 
 Development:
   - ruff >=0.1.0           (code linting)
@@ -200,6 +240,13 @@ License: MIT
 VERSION HISTORY
 ===============
 
+1.0.1 (January 2026)
+  - Fixed config file paths to use platformdirs
+  - Cross-platform app data directory support
+  - Added desktop shortcut creation in setup
+  - Improved error handling in batch launcher
+  - Updated documentation
+
 1.0.0 (January 2026)
   - Initial PyPI release
   - Modern Python src layout
@@ -215,7 +262,7 @@ VERSION HISTORY
 PLATFORM SUPPORT
 ================
 
-✅ Windows 10 (Primary)
-✅ Windows 11 (Primary)
-❌ Linux (Not supported - system tray, GPU drivers)
-❌ macOS (Not supported - system tray, GPU drivers)
+✅ Windows 10 (Primary - Full support)
+✅ Windows 11 (Primary - Full support)
+⚠️  Linux (Code cross-platform-ready but system tray integration requires pystray workarounds)
+⚠️  macOS (Code cross-platform-ready but system tray integration limited, GPU driver availability limited)

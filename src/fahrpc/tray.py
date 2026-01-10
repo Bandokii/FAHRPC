@@ -1,18 +1,42 @@
 """
-Tray module for FAHRPC
-Manages system tray icon and menu for window control
+Tray Module for FAHRPC
+=====================
+
+Manages the Windows system tray icon and context menu for application control.
+
+Features:
+    - System tray icon with custom PNG image
+    - Right-click context menu for quick actions
+    - Show/Hide console window toggle
+    - Restart and Exit application controls
+    - Daemon thread operation (doesn't block main loop)
+
+Menu Options:
+    - Show Console: Reveals the console window
+    - Hide Console: Hides the console window
+    - Restart FAHRPC: Restarts the main logic loop
+    - Exit: Cleanly shuts down the application
+
+Example usage:
+    >>> from fahrpc.tray import TrayIcon, set_console_visibility
+    >>> tray = TrayIcon(config, restart_event, stop_event)
+    >>> tray.start()  # Runs in background thread
+    >>> set_console_visibility(False)  # Hide console
 """
 
 import ctypes
 import logging
 import sys
 import threading
+from pathlib import Path
 from typing import Any, Dict
 
 import pystray
 from PIL import Image
 
-logger = logging.getLogger('FAHRPC')
+from fahrpc.config import APP_NAME
+
+logger = logging.getLogger(APP_NAME.upper())
 
 def set_console_visibility(visible: bool) -> None:
     """
@@ -52,11 +76,43 @@ class TrayIcon:
         Returns:
             PIL Image object for tray icon
         """
-        icon_file = self.config['display']['icon_file']
-        try:
-            return Image.open(icon_file)
-        except Exception:
-            return Image.new('RGB', (64, 64), color=(180, 0, 0))
+        icon_filename = self.config['display']['icon_file']
+
+        # Try multiple locations in order:
+        # 1. Relative to current working directory (most common)
+        # 2. Absolute path if specified
+        # 3. Relative to src/fahrpc module root
+        # 4. Relative to project root (three levels up from tray.py)
+        possible_paths = [
+            Path.cwd() / icon_filename,  # Current working directory
+            Path(icon_filename).resolve(),  # Absolute path
+            Path(__file__).parent / icon_filename,  # Same directory as tray.py
+            Path(__file__).parent.parent / icon_filename,  # src/fahrpc/../ (src/)
+            Path(__file__).parent.parent.parent / icon_filename,  # Project root
+        ]
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_paths = []
+        for p in possible_paths:
+            p_str = str(p.resolve())
+            if p_str not in seen:
+                seen.add(p_str)
+                unique_paths.append(p)
+
+        for icon_path in unique_paths:
+            try:
+                if icon_path.exists():
+                    logger.debug(f"Loading icon from: {icon_path}")
+                    return Image.open(icon_path)
+            except Exception as e:
+                logger.error(f"Failed to load icon from {icon_path}: {e}", exc_info=True)
+                continue
+
+        # Fallback: create a red circle icon
+        searched_paths = [str(p) for p in unique_paths]
+        logger.error(f"Could not find icon file '{icon_filename}' in any search path. Searched: {searched_paths}")
+        return Image.new('RGB', (64, 64), color=(180, 0, 0))
 
     def _create_menu(self) -> tuple:
         """
@@ -90,7 +146,7 @@ class TrayIcon:
         """Run the tray icon (blocking operation)."""
         icon_image = self._load_icon_image()
         menu = self._create_menu()
-        self.icon = pystray.Icon("FAHRPC", icon_image, "FAHRPC", menu)
+        self.icon = pystray.Icon(APP_NAME.upper(), icon_image, APP_NAME.upper(), menu)
         self.icon.run()
 
     def start(self) -> None:

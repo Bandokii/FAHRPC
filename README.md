@@ -1,7 +1,7 @@
 # FAHRPC - Folding@Home Discord Rich Presence
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/License-MIT-green)](license)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue)](https://www.microsoft.com/windows/)
 
 Monitor your Folding@Home GPU progress directly in Discord with real-time status updates, GPU stats, and performance metrics.
@@ -12,7 +12,7 @@ Monitor your Folding@Home GPU progress directly in Discord with real-time status
 - 💻 **GPU Monitoring** - Real-time GPU utilization and temperature tracking
 - 🔍 **Dual GPU Support** - Monitor NVIDIA and AMD GPUs simultaneously
 - 📊 **Live Stats** - Total points earned and work units completed
-- 🔄 **Auto-Reconnect** - Graceful reconnection with exponential backoff
+- 🔄 **Auto-Reconnect** - Automatic reconnection on disconnect
 - 🌡️ **Temperature Alerts** - Color-coded temperature warnings
 - 🎛️ **System Tray** - Minimize to tray with quick access menu
 - ⚡ **Lightweight** - Minimal CPU and memory usage
@@ -56,6 +56,8 @@ The setup script automatically:
 - Installs all Python dependencies
 - Downloads browser components for web scraping
 - Generates the `run_fahrpc.bat` launcher
+- Creates a desktop shortcut
+- Verifies all dependencies are working
 
 ### Step 3: Launch
 
@@ -85,13 +87,23 @@ Once running, FAHRPC sits in your system tray. Right-click the icon to:
 
 ### Configuration
 
-Edit `config.json` to customize:
+Edit the config file to customize:
 - Discord client ID
-- Folding@Home interface URL
+- Folding@Home interface URL (local or remote)
 - Temperature thresholds and colors
 - GPU monitoring (NVIDIA/AMD)
 - Update interval (default: 15 seconds)
 - Display options
+
+**Config file location:**
+- **Windows:** `%LOCALAPPDATA%\Bandokii\fahrpc\config.json`
+- **macOS:** `~/Library/Application Support/fahrpc/config.json`
+- **Linux:** `~/.config/fahrpc/config.json`
+
+**Folding@Home URL:**
+- **Default:** `http://localhost:7396/` - Monitors the PC that FAHRPC is running on
+- **Remote:** `http://<ip-address>:7396/` - Monitors a different computer on your network
+  - Example: `http://192.168.1.50:7396/` to monitor another PC at that IP
 
 **Default configuration works out of the box!**
 
@@ -188,6 +200,7 @@ All dependencies are automatically installed by `setup.bat`. For reference:
 - **pyadl** - AMD GPU monitoring
 - **pystray** - System tray icon
 - **Pillow** - Image handling
+- **platformdirs** - Cross-platform config paths
 
 ## Project Structure
 
@@ -231,7 +244,7 @@ uv build
 
 ## License
 
-MIT License - See [license](license) file for details
+MIT License - See [LICENSE](LICENSE) file for details
 
 ## Credits
 
@@ -241,8 +254,8 @@ MIT License - See [license](license) file for details
 
 ## Support
 
-- 📖 See `README.txt` for detailed documentation
-- 🆘 Check `fah_error_log.txt` for troubleshooting
+- 📖 See this README for detailed documentation
+- 🆘 Check the error log for troubleshooting (in your config directory)
 - 🐛 Report issues on [GitHub Issues](https://github.com/Bandokii/FAHRPC/issues)
 - 💬 Start discussions on [GitHub Discussions](https://github.com/Bandokii/FAHRPC/discussions)
 
@@ -252,7 +265,7 @@ MIT License - See [license](license) file for details
 A: No! The setup script handles everything automatically, including Python.
 
 **Q: Does this work on Linux/macOS?**  
-A: Currently Windows-only due to system tray integration and GPU driver dependencies.
+A: The code is cross-platform-ready, but primary support is Windows due to system tray integration and GPU driver availability. Config paths work on all platforms for users who want to port it.
 
 **Q: Can I use custom GPU names?**  
 A: Yes! Edit the `hardware.nvidia.strip_prefix` and `hardware.amd.strip_prefix` values in config.json
@@ -261,12 +274,23 @@ A: Yes! Edit the `hardware.nvidia.strip_prefix` and `hardware.amd.strip_prefix` 
 A: No, FAHRPC only reads data. It has minimal CPU/memory overhead (~50MB RAM).
 
 **Q: Can I monitor remote FAH instances?**  
-A: Yes, update the `foldingathome.web_url` in config.json to point to another machine's IP:port
+A: Yes! By default, FAHRPC monitors the Folding@Home client on the **same PC it's running on** (via `localhost:7396`). To monitor a different PC on your network, edit `config.json` and change:
+```json
+"web_url": "http://<other-pc-ip-address>:7396/"
+```
+For example: `"web_url": "http://192.168.1.100:7396/"` to monitor another computer at that IP.
 
 **Q: How do I update FAHRPC?**  
 A: Download the latest zip, extract over your existing folder, and run `setup.bat` again.
 
 ## Changelog
+
+### Version 1.0.1 (January 2026)
+- Fixed config/log file paths to use platformdirs
+- Cross-platform app data directory support
+- Added desktop shortcut creation in setup
+- Improved error handling in batch launcher
+- Updated documentation and references
 
 ### Version 1.0.0 (January 2026)
 - Initial PyPI release
