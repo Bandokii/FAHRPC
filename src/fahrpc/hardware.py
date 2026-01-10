@@ -82,7 +82,7 @@ class GPUMonitor:
         self._detect_hardware()
 
     def _detect_hardware(self) -> None:
-        """Detect available GPUs (Nvidia and AMD)."""
+        """Detect available GPUs (Nvidia and AMD) with sanity checks and extra logging."""
         # Nvidia detection
         if self.config['hardware']['nvidia']['enabled']:
             try:
@@ -101,12 +101,34 @@ class GPUMonitor:
             except Exception as e:
                 logger.error(f"Nvidia GPU detection failed: {e}", exc_info=True)
 
-        # AMD detection
+        # AMD detection with sanity check and extra logging
         if self.config['hardware']['amd']['enabled'] and AMD_SUPPORT:
             try:
                 instance = ADLManager.getInstance()
                 if instance:
-                    self.amd_devices = instance.getDevices()
+                    raw_devices = instance.getDevices()
+                    valid_devices = []
+                    for dev in raw_devices:
+                        # Log all detected device details for debugging
+                        logger.debug(
+                            f"[AMD DETECT] Device: adapterName={getattr(dev, 'adapterName', None)}, "
+                            f"present={getattr(dev, 'present', None)}, "
+                            f"busNumber={getattr(dev, 'busNumber', None)}"
+                        )
+                        # Sanity check: Only keep devices with a valid, non-empty adapterName
+                        # and present==True if available
+                        name = getattr(dev, 'adapterName', None)
+                        present = getattr(dev, 'present', True)  # Some ADL versions have 'present' attribute
+                        if name and isinstance(name, str) and name.strip() and present:
+                            valid_devices.append(dev)
+                        else:
+                            logger.warning(
+                                f"[AMD DETECT] Ignoring invalid or ghost device: adapterName={name}, present={present}"
+                            )
+                    self.amd_devices = valid_devices
+                    logger.info(
+                        f"[AMD DETECT] {len(self.amd_devices)} valid AMD device(s) detected after filtering."
+                    )
             except Exception as e:
                 logger.error(f"AMD GPU detection failed: {e}", exc_info=True)
                 self.amd_devices = []

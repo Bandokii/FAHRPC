@@ -25,8 +25,6 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import platformdirs
-
 # ============================================================================
 # Application Metadata
 # ============================================================================
@@ -45,17 +43,14 @@ logger = logging.getLogger(APP_NAME.upper())
 
 def get_config_dir() -> Path:
     """
-    Get the appropriate config directory for the current platform.
-
-    Uses platformdirs for cross-platform compatibility:
-    - Windows: %LOCALAPPDATA%\\Bandokii\\fahrpc
-    - macOS: ~/Library/Application Support/fahrpc
-    - Linux: ~/.config/fahrpc (XDG compliant)
+    Get the config directory in the project root (where this file is located).
 
     Returns:
         Path to the config directory (creates it if it doesn't exist)
     """
-    config_dir = Path(platformdirs.user_config_dir(APP_NAME, APP_AUTHOR))
+    # Use the parent of this file's parent (src/fahrpc/) -> project root
+    project_root = Path(__file__).resolve().parent.parent.parent
+    config_dir = project_root
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
 
@@ -72,13 +67,13 @@ def get_config_path() -> Path:
 
 def get_log_path(filename: str = "fah_error_log.txt") -> Path:
     """
-    Get the full path to a log file in the config directory.
+    Get the full path to a log file in the project directory.
 
     Args:
         filename: Name of the log file
 
     Returns:
-        Path to the log file in the appropriate config directory
+        Path to the log file in the project directory
     """
     return get_config_dir() / filename
 
