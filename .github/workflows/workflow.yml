@@ -46,10 +46,5 @@ jobs:
           path: dist/
 
       - name: Publish distribution to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          pip install --upgrade twine
-          twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
 
