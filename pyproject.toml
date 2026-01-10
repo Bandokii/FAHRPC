@@ -3,7 +3,6 @@ name = "fahrpc"
 version = "1.0.0"
 description = "Folding@Home Discord Rich Presence - Monitor GPU folding progress in Discord"
 readme = "README.md"
-license = "MIT"
 requires-python = ">=3.10"
 authors = [{name = "Bandokii"}]
 keywords = [
