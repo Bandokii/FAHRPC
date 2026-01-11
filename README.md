@@ -275,12 +275,6 @@ A: Yes! Edit the `hardware.nvidia.strip_prefix` and `hardware.amd.strip_prefix` 
 **Q: Does this impact Folding@Home performance?**  
 A: No, FAHRPC only reads data. It has minimal CPU/memory overhead (~50MB RAM).
 
-**Q: Can I monitor remote FAH instances?**  
-A: Yes! By default, FAHRPC monitors the Folding@Home client on the **same PC it's running on** (via `localhost:7396`). To monitor a different PC on your network, edit `config.json` and change:
-```json
-"web_url": "http://<other-pc-ip-address>:7396/"
-```
-For example: `"web_url": "http://192.168.1.100:7396/"` to monitor another computer at that IP.
 
 **Q: How do I update FAHRPC?**  
 A: Download the latest zip, extract over your existing folder, and run `setup.bat` again.
