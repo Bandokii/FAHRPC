@@ -104,8 +104,6 @@ Edit the config file to customize:
 
 **Folding@Home URL:**
 - **Default:** `http://localhost:7396/` - Monitors the PC that FAHRPC is running on
-- **Remote:** `http://<ip-address>:7396/` - Monitors a different computer on your network
-  - Example: `http://192.168.1.50:7396/` to monitor another PC at that IP
 
 **Default configuration works out of the box!**
 
