@@ -22,11 +22,10 @@ Example usage:
 
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
 from platformdirs import user_config_dir
+import importlib.resources
 
 # ============================================================================
 # Application Metadata
@@ -96,9 +95,12 @@ def get_log_path(filename: str = "fah_error_log.txt") -> Path:
 
 
 def load_default_config() -> Dict[str, Any]:
-    default_path = os.path.join(os.path.dirname(__file__), "data", "default_config.json")
-    with open(default_path, "r") as f:
-        return json.load(f)
+    # Use importlib.resources to load default_config.json from the package
+    try:
+        with importlib.resources.files("fahrpc.data").joinpath("default_config.json").open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        raise RuntimeError(f"Could not load default_config.json: {e}")
 
 DEFAULT_CONFIG = load_default_config()
 def diff_dicts(default: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:

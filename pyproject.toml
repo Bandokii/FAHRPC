@@ -1,6 +1,6 @@
 [project]
 name = "fahrpc"
-version = "1.0.3"
+version = "1.0.4"
 description = "Folding@Home Discord Rich Presence - Monitor GPU folding progress in Discord"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
@@ -52,7 +52,10 @@ fahrpc = "fahrpc.main:main"
 [project.optional-dependencies]
 dev = ["ruff>=0.1.0"]
 
+
 [tool.setuptools]
+packages = ["fahrpc", "fahrpc.data"]
+package-data = {"fahrpc.data" = ["default_config.json"]}
 
 [tool.ruff]
 line-length = 120

@@ -3,3 +3,4 @@ include LICENSE
 include config.json
 include FAHRPC.png
 include FAHRPC.ico
+include src/fahrpc/data/default_config.json

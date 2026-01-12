@@ -4,7 +4,7 @@ requires-python = ">=3.10, <3.14"
 
 [[package]]
 name = "fahrpc"
-version = "1.0.3"
+version = "1.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "nvidia-ml-py" },
