@@ -185,10 +185,6 @@ fahrpc
 
 ```bash
 pip install fahrpc
-# or
-uv tool install fahrpc
-```
-
 ## Dependencies
 
 All dependencies are automatically installed by `setup.bat`. For reference:
@@ -196,28 +192,11 @@ All dependencies are automatically installed by `setup.bat`. For reference:
 ### Python Packages
 - **playwright** - Web scraping and browser automation
 - **pypresence** - Discord RPC integration
-- **nvidia-ml-py** - NVIDIA GPU monitoring
-- **pyadl** - AMD GPU monitoring
-- **pystray** - System tray icon
-- **Pillow** - Image handling
 - **platformdirs** - Cross-platform config paths
 
-## Project Structure
-
-```
-FAHRPC/
-├── src/fahrpc/           # Main package
 │   ├── main.py          # Entry point
 │   ├── config.py        # Configuration
-│   ├── hardware.py      # GPU monitoring
-│   ├── scraper.py       # Web scraping
-│   ├── discord_rpc.py   # Discord integration
-│   ├── logger.py        # Error logging
-│   ├── tray.py          # System tray
-│   └── __init__.py      # Package definition
-├── config.json          # User settings
 ├── pyproject.toml       # Project metadata
-├── setup.bat            # Installation script
 └── run_fahrpc.bat       # Launcher (created by setup)
 ```
 
@@ -273,7 +252,10 @@ A: Yes! Edit the `hardware.nvidia.strip_prefix` and `hardware.amd.strip_prefix` 
 **Q: Does this impact Folding@Home performance?**  
 A: No, FAHRPC only reads data. It has minimal CPU/memory overhead (~50MB RAM).
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 379b21b740cffe4fc22408c5b86bc1f1e4c1fc74
 
 **Q: How do I update FAHRPC?**  
 A: Download the latest zip, extract over your existing folder, and run `setup.bat` again.
