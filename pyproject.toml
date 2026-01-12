@@ -1,6 +1,6 @@
 [project]
 name = "fahrpc"
-version = "1.0.2"
+version = "1.0.3"
 description = "Folding@Home Discord Rich Presence - Monitor GPU folding progress in Discord"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"

@@ -4,7 +4,7 @@ FAHRPC Main Module - Application Entry Point
 
 Original Author: Bandokii
 AI Collaborator: GitHub Copilot
-Version: 1.0.1 (January 2026)
+Version: 1.0.3 (January 2026)
 
 This is the main entry point for FAHRPC. It orchestrates all components:
 - Initializes logging, configuration, and hardware monitoring
