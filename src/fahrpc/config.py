@@ -22,10 +22,11 @@ Example usage:
 
 import json
 import logging
-from platformdirs import user_config_dir
-from fahrpc.env_detect import is_running_from_global_install, find_project_root
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+from platformdirs import user_config_dir
 
 # ============================================================================
 # Application Metadata
@@ -51,17 +52,14 @@ def get_config_dir() -> Path:
     Returns:
         Path to the config directory (creates it if it doesn't exist)
     """
-    project_root = find_project_root()
+    from fahrpc.env_detect import get_project_root
+    project_root = get_project_root()
     if project_root is not None:
-        # Only use project root if config.json and pyproject.toml are present
         config_json = project_root / "config.json"
         pyproject = project_root / "pyproject.toml"
         if config_json.exists() and pyproject.exists():
-            config_dir = project_root
-            config_dir.mkdir(parents=True, exist_ok=True)
-            return config_dir
-
-    # Otherwise, use user config dir (platformdirs)
+            return project_root
+    # Fallback: use platformdirs config dir
     config_dir = Path(user_config_dir(APP_NAME, APP_AUTHOR))
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
@@ -96,43 +94,28 @@ def get_log_path(filename: str = "fah_error_log.txt") -> Path:
 # This configuration is used when no config.json exists or as a base for
 # merging with user settings. All values here are sensible defaults.
 
-DEFAULT_CONFIG = {
-    # Discord Rich Presence settings
-    "discord": {
-        "client_id": "1457701520673079501",  # FAHRPC Discord Application ID
-        "buttons": [
-            {"label": "Start Folding", "url": "https://foldingathome.org/start-folding/"},
-            {"label": "GitHub", "url": "https://github.com/Bandokii/FAHRPC"}
-        ]
-    },
-    # Folding@Home connection settings
-    "foldingathome": {
-        "web_url": "http://localhost:7396/",  # Only supports local Folding@Home client
-        "stats_url": "https://v8-5.foldingathome.org/stats",  # Global stats page
-        "update_interval": 15  # Seconds between Discord/console updates
-    },
-    # Temperature display thresholds and colors
-    "temperature": {
-        "thresholds": {"low": 65, "medium": 75},  # °C thresholds
-        "colors": {"low": "green", "medium": "orange", "high": "red"}  # ANSI colors
-    },
-    # Display and UI settings
-    "display": {
-        "start_hidden": True,   # Hide console on startup (tray only)
-        "show_header": True,    # Show ASCII art header
-        "icon_file": "FAHRPC.png"  # Tray icon filename
-    },
-    # GPU monitoring settings
-    "hardware": {
-        "nvidia": {"enabled": True, "strip_prefix": "NVIDIA GeForce "},
-        "amd": {"enabled": True, "strip_prefix": "AMD Radeon "}
-    },
-    # Logging settings
-    "logging": {
-        "error_log_file": "fah_error_log.txt",  # Log filename in config dir
-        "suppress_asyncio_warnings": True  # Filter noisy async warnings
-    }
-}
+
+def load_default_config() -> Dict[str, Any]:
+    default_path = os.path.join(os.path.dirname(__file__), "data", "default_config.json")
+    with open(default_path, "r") as f:
+        return json.load(f)
+
+DEFAULT_CONFIG = load_default_config()
+def diff_dicts(default: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively return only the keys in user that differ from default.
+    """
+    diff = {}
+    for key, value in user.items():
+        if key not in default:
+            diff[key] = value
+        elif isinstance(value, dict) and isinstance(default[key], dict):
+            subdiff = diff_dicts(default[key], value)
+            if subdiff:
+                diff[key] = subdiff
+        elif value != default[key]:
+            diff[key] = value
+    return diff
 
 
 # ============================================================================
@@ -236,18 +219,30 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
             return merged
     except FileNotFoundError:
         logger.info(f"[CONFIG] Config file not found at {config_path}")
-        logger.info("[CONFIG] Creating default configuration")
-        print(f"Config file not found. Creating default config at: {config_path}")
+        logger.info("[CONFIG] Creating minimal configuration file")
+        print(f"Config file not found. Creating minimal config at: {config_path}")
         # Ensure parent directory exists
         Path(config_path).parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"[CONFIG] Created config directory: {Path(config_path).parent}")
+        # Save an empty config file (user can fill in overrides)
         with open(config_path, 'w') as f:
-            json.dump(DEFAULT_CONFIG, f, indent=2)
-            logger.info("[CONFIG] Default configuration file written")
+            json.dump({}, f, indent=2)
+            logger.info("[CONFIG] Empty configuration file written")
         return DEFAULT_CONFIG
+
     except json.JSONDecodeError as e:
         logger.error(f"[CONFIG] JSON parsing error: {e}", exc_info=True)
         print(f"Error parsing config file: {e}")
         print("Using default configuration.")
         logger.info("[CONFIG] Falling back to default configuration")
         return DEFAULT_CONFIG
+
+def save_config(config: Dict[str, Any], config_path: Optional[str] = None) -> None:
+    """
+    Save only the keys that differ from defaults to config.json.
+    """
+    if config_path is None:
+        config_path = str(get_config_path())
+    diff = diff_dicts(DEFAULT_CONFIG, config)
+    Path(config_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(config_path, "w") as f:
+        json.dump(diff, f, indent=2)

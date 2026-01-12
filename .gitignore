@@ -1,5 +1,6 @@
+# Ignore user config file
+config.json
 # Windows/Batch scripts and local artifacts
-setup.bat
 fahrpc_setup.log
 # Virtual Environment
 .venv/
@@ -44,5 +45,3 @@ fah_error_log.txt
 .ruff_cache/
 .pytest_cache/
 
-# Reference folders
-download-artifact-4.0.0/
