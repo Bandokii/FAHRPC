@@ -252,11 +252,6 @@ A: Yes! Edit the `hardware.nvidia.strip_prefix` and `hardware.amd.strip_prefix` 
 **Q: Does this impact Folding@Home performance?**  
 A: No, FAHRPC only reads data. It has minimal CPU/memory overhead (~50MB RAM).
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 379b21b740cffe4fc22408c5b86bc1f1e4c1fc74
-
 **Q: How do I update FAHRPC?**  
 A: Download the latest zip, extract over your existing folder, and run `setup.bat` again.
 
