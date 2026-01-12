@@ -38,6 +38,10 @@ Thumbs.db
 *.log
 setup_log.txt
 setup_error_log.txt
+
+# Project-specific generated files
+uv.lock
+run_fahrpc.bat
 fah_error_log.txt
 %LOGFILE%
 
