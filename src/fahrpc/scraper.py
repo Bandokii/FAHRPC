@@ -12,7 +12,7 @@ Features:
     - Regex-based data extraction for speed
 
 Data Sources:
-    - Local Control: http://localhost:7396/ (or remote IP)
+    - Local Control: http://localhost:7396/
     - Global Stats:  https://v8-5.foldingathome.org/stats
 
 Example usage:
@@ -112,7 +112,7 @@ class FAHScraper:
         This means it monitors the FAH client on the same PC that FAHRPC is running on.
 
         To monitor a different PC, change 'foldingathome.web_url' in config.json to:
-            http://<other-pc-ip>:7396/
+            http://localhost:7396/
 
         Returns:
             Tuple of (percent_complete, project_id, is_running)

@@ -1,3 +1,6 @@
+# Windows/Batch scripts and local artifacts
+setup.bat
+fahrpc_setup.log
 # Virtual Environment
 .venv/
 venv/

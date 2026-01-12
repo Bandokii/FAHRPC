@@ -194,6 +194,15 @@ async def main_logic() -> None:
     """
     global logger
 
+    # Ensure logger is initialized (fallback for async entry)
+    if logger is None:
+        config = load_config()
+        log_file = str(get_log_path(config['logging']['error_log_file']))
+        logger = setup_error_logging(
+            log_file,
+            config['logging']['suppress_asyncio_warnings']
+        )
+
     # Enable ANSI colors on Windows (required for colored output)
     if sys.platform == "win32":
         os.system('color')
@@ -576,6 +585,14 @@ def main() -> None:
     # Define graceful shutdown handler
     def signal_handler(signum: int, frame) -> None:
         """Handle shutdown signals (SIGTERM, SIGINT)."""
+        global logger
+        if logger is None:
+            # Defensive: re-initialize logger if needed
+            log_file = str(get_log_path(config['logging']['error_log_file']))
+            logger = setup_error_logging(
+                log_file,
+                config['logging']['suppress_asyncio_warnings']
+            )
         logger.warning(f"[SIGNAL] Received signal {signum}, initiating graceful shutdown")
         print(f"\n\n {get_timestamp()} {COLORS['yellow']}[*] Received shutdown signal ({signum})...{COLORS['reset']}")
         stop_event.set()

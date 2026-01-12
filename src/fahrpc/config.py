@@ -22,6 +22,8 @@ Example usage:
 
 import json
 import logging
+from platformdirs import user_config_dir
+from fahrpc.env_detect import is_running_from_global_install, find_project_root
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -43,14 +45,24 @@ logger = logging.getLogger(APP_NAME.upper())
 
 def get_config_dir() -> Path:
     """
-    Get the config directory in the project root (where this file is located).
-
+    Determine the config directory location:
+    - If running from project root (pyproject.toml and config.json present), use project root.
+    - Otherwise, use platformdirs user config directory.
     Returns:
         Path to the config directory (creates it if it doesn't exist)
     """
-    # Use the parent of this file's parent (src/fahrpc/) -> project root
-    project_root = Path(__file__).resolve().parent.parent.parent
-    config_dir = project_root
+    project_root = find_project_root()
+    if project_root is not None:
+        # Only use project root if config.json and pyproject.toml are present
+        config_json = project_root / "config.json"
+        pyproject = project_root / "pyproject.toml"
+        if config_json.exists() and pyproject.exists():
+            config_dir = project_root
+            config_dir.mkdir(parents=True, exist_ok=True)
+            return config_dir
+
+    # Otherwise, use user config dir (platformdirs)
+    config_dir = Path(user_config_dir(APP_NAME, APP_AUTHOR))
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
 
@@ -95,7 +107,7 @@ DEFAULT_CONFIG = {
     },
     # Folding@Home connection settings
     "foldingathome": {
-        "web_url": "http://localhost:7396/",  # localhost = this PC; for remote use http://<ip>:7396/
+        "web_url": "http://localhost:7396/",  # Only supports local Folding@Home client
         "stats_url": "https://v8-5.foldingathome.org/stats",  # Global stats page
         "update_interval": 15  # Seconds between Discord/console updates
     },
