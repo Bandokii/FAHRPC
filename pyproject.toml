@@ -56,6 +56,7 @@ dev = ["ruff>=0.1.0"]
 [tool.setuptools]
 packages = ["fahrpc", "fahrpc.data"]
 package-data = {"fahrpc.data" = ["default_config.json"]}
+package-dir = {"" = "src"}
 
 [tool.ruff]
 line-length = 120
