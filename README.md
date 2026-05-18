@@ -6,6 +6,12 @@
 
 Monitor your Folding@Home GPU progress directly in Discord with real-time status updates, GPU stats, and performance metrics.
 
+> **This project has been superseded by [FAHRPC-Recode](https://github.com/Bandokii/FAHRPC-Recode).**
+>
+> The recode is a complete rewrite that connects to Folding@Home v8's WebSocket
+> directly (no browser scraping), runs on Linux, Windows, and macOS, and ships
+> with a proper Windows installer. New installs should use the recode.
+
 ## Features
 
 - 🎮 **Discord Rich Presence** - Display folding progress in your Discord status
